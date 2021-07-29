@@ -1,5 +1,6 @@
 #![no_std]
 use core::marker::PhantomData;
+pub mod line_in;
 
 ///Represent a command to send to the codec, that is register address and content to write in it.
 #[derive(Debug, Eq, PartialEq)]
@@ -9,7 +10,7 @@ pub struct Command<T> {
 }
 
 impl<T> From<Command<T>> for [u8; 2] {
-///Allow to convert command to an array directly usable with SPI and I2C abstraction from embedded-hal.
+    ///Allow to convert command to an array directly usable with SPI and I2C abstraction from embedded-hal.
     fn from(cmd: Command<T>) -> [u8; 2] {
         cmd.data.to_be_bytes()
     }
