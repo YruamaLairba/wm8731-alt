@@ -1,5 +1,9 @@
 #![no_std]
 use core::marker::PhantomData;
+
+#[macro_use]
+mod macros;
+
 pub mod line_in;
 
 ///Represent a command to send to the codec, that is register address and content to write in it.

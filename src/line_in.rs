@@ -51,12 +51,8 @@ pub struct Invol<CHANNEL> {
 }
 
 impl<CHANNEL> Invol<CHANNEL> {
-    #[must_use]
-    pub fn bits(mut self, value: u8) -> Command<LineIn<CHANNEL>> {
-        let mask = 0b1_1111;
-        self.cmd.data = self.cmd.data & !mask | (value as u16) & mask;
-        self.cmd
-    }
+
+impl_bits!(Command<LineIn<CHANNEL>>,5,0);
 }
 
 #[cfg(test)]
