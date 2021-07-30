@@ -43,6 +43,9 @@ impl<CHANNEL> Command<LineIn<CHANNEL>> {
     pub fn invol(self) -> Invol<CHANNEL> {
         Invol { cmd: self }
     }
+    pub fn inmute(self) -> Inmute<CHANNEL> {
+        Inmute { cmd: self }
+    }
 }
 
 ///Writer of LINVOL or RINVOL fields. Control line input volume.
@@ -51,8 +54,16 @@ pub struct Invol<CHANNEL> {
 }
 
 impl<CHANNEL> Invol<CHANNEL> {
+    impl_bits!(Command<LineIn<CHANNEL>>, 5, 0);
+}
 
-impl_bits!(Command<LineIn<CHANNEL>>,5,0);
+///Writer of LINMUTE or RINMUTE fields. Mute or unmute line input.
+pub struct Inmute<CHANNEL> {
+    cmd: Command<LineIn<CHANNEL>>,
+}
+
+impl<CHANNEL> Inmute<CHANNEL> {
+    impl_bitsetters!(Command<LineIn<CHANNEL>>, 7);
 }
 
 #[cfg(test)]
