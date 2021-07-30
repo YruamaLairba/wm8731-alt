@@ -9,6 +9,14 @@ pub struct Command<T> {
     t: PhantomData<T>,
 }
 
+impl<T> Copy for Command<T> {}
+
+impl<T> Clone for Command<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
 impl<T> From<Command<T>> for [u8; 2] {
     ///Allow to convert command to an array directly usable with SPI and I2C abstraction from embedded-hal.
     fn from(cmd: Command<T>) -> [u8; 2] {
