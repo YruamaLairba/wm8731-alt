@@ -4,7 +4,7 @@ macro_rules! impl_bits {
         #[must_use]
         pub fn bits(mut self, value: u8) -> $ret {
             let mask = !((!0) << $lenght) << $shift;
-            self.cmd.data = self.cmd.data & !mask | (value as u16) & mask;
+            self.cmd.data = self.cmd.data & !mask | (value as u16) << $shift & mask;
             self.cmd
         }
     };
@@ -14,9 +14,8 @@ macro_rules! impl_bits {
 macro_rules! impl_bit {
     ($ret:ty, $pos:literal) => {
         #[must_use]
-        pub fn bit(mut self, value: u8) -> $ret {
-            let mask = 0b1 << $pos;
-            self.cmd.data = self.cmd.data & !mask | (value as u16) & mask;
+        pub fn bit(mut self, value: bool) -> $ret {
+            self.cmd.data = self.cmd.data & !(1 << $pos) | (value as u16) << $pos;
             self.cmd
         }
     };
@@ -65,6 +64,7 @@ macro_rules! impl_disable {
         }
     };
 }
+
 macro_rules! impl_bitsetters {
     ($ret:ty, $pos:literal) => {
         impl_bit!($ret, $pos);
@@ -75,3 +75,94 @@ macro_rules! impl_bitsetters {
     };
 }
 
+macro_rules! impl_toggle_writer {
+    ($name:ident$(<$mark:tt>)?, $ret:ty, $pos:literal) => {
+        pub struct $name $(<$mark>)? {
+            cmd: $ret,
+        }
+
+        impl$(<$mark>)? $name$(<$mark>)? {
+            impl_bitsetters!($ret, $pos);
+        }
+    };
+}
+
+#[cfg(test)]
+mod tests {
+    #[derive(Debug, Eq, PartialEq, Clone, Copy)]
+    pub struct Cmd {
+        data: u16,
+    }
+
+    impl Cmd {
+        fn bits_w(self) -> BitsW {
+            BitsW { cmd: self }
+        }
+        fn bit_w(self) -> BitW {
+            BitW { cmd: self }
+        }
+    }
+
+    pub struct BitsW {
+        cmd: Cmd,
+    }
+
+    impl BitsW {
+        impl_bits!(Cmd, 5, 2);
+    }
+
+    impl_toggle_writer!(BitW, Cmd, 1);
+
+    #[test]
+    fn macro_tests() {
+        let expect = Cmd { data: 0b111_1100 };
+        let test = Cmd { data: 0 }.bits_w().bits(0b111_11);
+        assert_eq!(
+            test, expect,
+            "Got {:#b}, expected {:#b}",
+            test.data, expect.data
+        );
+        let expect = Cmd { data: 0b111_1100 };
+        let test = Cmd { data: 0 }.bits_w().bits(!0);
+        assert_eq!(
+            test, expect,
+            "Got {:#b}, expected {:#b}",
+            test.data, expect.data
+        );
+        let expect = Cmd { data: 0b10 };
+        let test = Cmd { data: 0 }.bit_w().bit(true);
+        assert_eq!(
+            test, expect,
+            "Got {:#b}, expected {:#b}",
+            test.data, expect.data
+        );
+        let expect = Cmd { data: 0b10 };
+        let test = Cmd { data: 0 }.bit_w().set_bit();
+        assert_eq!(
+            test, expect,
+            "Got {:#b}, expected {:#b}",
+            test.data, expect.data
+        );
+        let expect = Cmd { data: 0b10 };
+        let test = Cmd { data: 0 }.bit_w().enable();
+        assert_eq!(
+            test, expect,
+            "Got {:#b}, expected {:#b}",
+            test.data, expect.data
+        );
+        let expect = Cmd { data: 0b101 };
+        let test = Cmd { data: 0b111 }.bit_w().clear_bit();
+        assert_eq!(
+            test, expect,
+            "Got {:#b}, expected {:#b}",
+            test.data, expect.data
+        );
+        let expect = Cmd { data: 0b101 };
+        let test = Cmd { data: 0b111 }.bit_w().disable();
+        assert_eq!(
+            test, expect,
+            "Got {:#b}, expected {:#b}",
+            test.data, expect.data
+        );
+    }
+}

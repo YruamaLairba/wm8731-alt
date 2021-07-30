@@ -57,14 +57,7 @@ impl<CHANNEL> Invol<CHANNEL> {
     impl_bits!(Command<LineIn<CHANNEL>>, 5, 0);
 }
 
-///Writer of LINMUTE or RINMUTE fields. Mute or unmute line input.
-pub struct Inmute<CHANNEL> {
-    cmd: Command<LineIn<CHANNEL>>,
-}
-
-impl<CHANNEL> Inmute<CHANNEL> {
-    impl_bitsetters!(Command<LineIn<CHANNEL>>, 7);
-}
+impl_toggle_writer!(Inmute<CHANNEL>, Command<LineIn<CHANNEL>>, 7);
 
 #[cfg(test)]
 mod tests {
