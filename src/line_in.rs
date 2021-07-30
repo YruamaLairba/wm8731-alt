@@ -1,19 +1,13 @@
 //! Line inputs configuration
 #![allow(clippy::new_without_default)]
 
-use crate::Command;
+use crate::{Command, Left, Right};
 use core::marker::PhantomData;
 
 ///Marker indicating line in concern
 pub struct LineIn<CHANNEL> {
     channel: PhantomData<CHANNEL>,
 }
-
-///Marker indicating left channel concern
-pub struct Left;
-
-///Marker indicating right channel concern
-pub struct Right;
 
 ///Marker indicating left line in concern
 pub type LeftLineIn = LineIn<Left>;
@@ -47,7 +41,7 @@ impl<CHANNEL> Command<LineIn<CHANNEL>> {
         Inmute { cmd: self }
     }
     pub fn inboth(self) -> Inboth<CHANNEL> {
-        Inboth {cmd: self}
+        Inboth { cmd: self }
     }
 }
 

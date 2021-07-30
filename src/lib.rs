@@ -6,6 +6,12 @@ mod macros;
 
 pub mod line_in;
 
+///Marker indicating left channel concern
+pub struct Left;
+
+///Marker indicating right channel concern
+pub struct Right;
+
 ///Represent a command to send to the codec, that is register address and content to write in it.
 #[derive(Debug, Eq, PartialEq)]
 pub struct Command<T> {
