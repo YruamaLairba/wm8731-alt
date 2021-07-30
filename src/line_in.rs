@@ -46,6 +46,9 @@ impl<CHANNEL> Command<LineIn<CHANNEL>> {
     pub fn inmute(self) -> Inmute<CHANNEL> {
         Inmute { cmd: self }
     }
+    pub fn inboth(self) -> Inboth<CHANNEL> {
+        Inboth {cmd: self}
+    }
 }
 
 ///Writer of LINVOL or RINVOL fields. Control line input volume.
@@ -58,6 +61,7 @@ impl<CHANNEL> Invol<CHANNEL> {
 }
 
 impl_toggle_writer!(Inmute<CHANNEL>, Command<LineIn<CHANNEL>>, 7);
+impl_toggle_writer!(Inboth<CHANNEL>, Command<LineIn<CHANNEL>>, 8);
 
 #[cfg(test)]
 mod tests {
