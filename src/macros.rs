@@ -23,6 +23,13 @@ macro_rules! impl_bit {
 
 ///Template for setting a bit into a one bit field
 macro_rules! impl_set_bit {
+    ($alias:ident, $ret:ty, $pos:literal) => {
+        #[must_use]
+        pub fn $alias(mut self) -> $ret {
+            self.cmd.data |= 0b1 << $pos;
+            self.cmd
+        }
+    };
     ($ret:ty, $pos:literal) => {
         #[must_use]
         pub fn set_bit(mut self) -> $ret {
@@ -45,6 +52,13 @@ macro_rules! impl_enable {
 
 ///Template for clearing a bit into a one bit field
 macro_rules! impl_clear_bit {
+    ($alias:ident, $ret:ty, $pos:literal) => {
+        #[must_use]
+        pub fn $alias(mut self) -> $ret {
+            self.cmd.data &= !(0b1 << $pos);
+            self.cmd
+        }
+    };
     ($ret:ty, $pos:literal) => {
         #[must_use]
         pub fn clear_bit(mut self) -> $ret {
@@ -83,6 +97,19 @@ macro_rules! impl_toggle_writer {
 
         impl$(<$mark>)? $name$(<$mark>)? {
             impl_bitsetters!($ret, $pos);
+        }
+    };
+}
+
+macro_rules! impl_command_new {
+    ($type:ty, $reg:literal, $default:literal) => {
+        impl Command<$type> {
+            pub fn new() -> Self {
+                Self {
+                    data: $reg << 9 | $default,
+                    t: PhantomData::<$type>,
+                }
+            }
         }
     };
 }
