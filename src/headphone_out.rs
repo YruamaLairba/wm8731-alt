@@ -1,7 +1,7 @@
 //! Headphone ouputs configuration
 #![allow(clippy::new_without_default)]
 
-use crate::{Command,Left,Right};
+use crate::{Command, Left, Right};
 use core::marker::PhantomData;
 
 ///Marker indicating headphone ouputs concern
