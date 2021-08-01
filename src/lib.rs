@@ -4,10 +4,11 @@ use core::marker::PhantomData;
 #[macro_use]
 mod macros;
 
-pub mod line_in;
-pub mod headphone_out;
 pub mod analogue_audio_path;
+pub mod digital_audio_interface;
 pub mod digital_audio_path;
+pub mod headphone_out;
+pub mod line_in;
 pub mod power_down;
 
 ///Marker indicating left channel concern
