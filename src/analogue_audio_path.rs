@@ -83,8 +83,8 @@ impl Dacsel {
     #[must_use]
     pub fn variant(self,value: DacselV) -> Command<AnalogueAudioPath> {
         match value {
-            DacselV::Deselect => self.select(),
-            DacselV::Select => self.deselect(),
+            DacselV::Deselect => self.deselect(),
+            DacselV::Select => self.select(),
         }
     }
 }
