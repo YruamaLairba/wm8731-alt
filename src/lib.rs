@@ -8,6 +8,7 @@ pub mod line_in;
 pub mod headphone_out;
 pub mod analogue_audio_path;
 pub mod digital_audio_path;
+pub mod power_down;
 
 ///Marker indicating left channel concern
 pub struct Left;
