@@ -13,6 +13,17 @@ pub mod line_in;
 pub mod power_down;
 pub mod sampling;
 
+pub mod reset {
+//! Reset the device
+    #![allow(clippy::new_without_default)]
+    use crate::Command;
+    use core::marker::PhantomData;
+    /// Marker indicating a reset command
+    pub struct Reset;
+
+    impl_command_new!(Reset, 0b1111, 0);
+}
+
 ///Marker indicating left channel concern
 pub struct Left;
 
