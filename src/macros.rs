@@ -1,5 +1,16 @@
 ///This macro is the template for raw bits write to a field
 macro_rules! impl_bits {
+    (unsafe, $ret:ty, $lenght:literal, $shift:literal) => {
+        /// # Safety
+        ///
+        /// Some bit combinations are invalid, please read the datasheet.
+        #[must_use]
+        pub unsafe fn bits(mut self, value: u8) -> $ret {
+            let mask = !((!0) << $lenght) << $shift;
+            self.cmd.data = self.cmd.data & !mask | (value as u16) << $shift & mask;
+            self.cmd
+        }
+    };
     ($ret:ty, $lenght:literal, $shift:literal) => {
         #[must_use]
         pub fn bits(mut self, value: u8) -> $ret {

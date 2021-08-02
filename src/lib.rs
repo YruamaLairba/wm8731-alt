@@ -10,6 +10,7 @@ pub mod digital_audio_path;
 pub mod headphone_out;
 pub mod line_in;
 pub mod power_down;
+pub mod sampling;
 
 ///Marker indicating left channel concern
 pub struct Left;
