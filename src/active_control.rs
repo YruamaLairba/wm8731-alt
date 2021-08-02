@@ -4,21 +4,21 @@
 use crate::Command;
 use core::marker::PhantomData;
 
-///Marker idicating an "Active" command
-pub struct Active;
+///Marker idicating an "Active Control" command
+pub struct ActiveControl;
 
-impl_command_new!(Active, 0b1001, 0b0);
+impl_command_new!(ActiveControl, 0b1001, 0b0);
 
-impl Command<Active> {
+impl Command<ActiveControl> {
     ///Activate digital audio interface
     #[must_use]
-    pub fn active(mut self) -> Command<Active> {
+    pub fn active(mut self) -> Command<ActiveControl> {
         self.data |= 0b1;
         self
     }
     ///Dectivate digital audio interface
     #[must_use]
-    pub fn inactive(mut self) -> Command<Active> {
+    pub fn inactive(mut self) -> Command<ActiveControl> {
         self.data &= !(0b1);
         self
     }

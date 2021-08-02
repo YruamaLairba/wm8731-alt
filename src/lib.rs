@@ -4,7 +4,7 @@ use core::marker::PhantomData;
 #[macro_use]
 mod macros;
 
-pub mod active;
+pub mod active_control;
 pub mod analogue_audio_path;
 pub mod digital_audio_interface;
 pub mod digital_audio_path;
