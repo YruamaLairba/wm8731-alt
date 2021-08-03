@@ -52,8 +52,6 @@ pub fn sampling_command_builder() -> Sampling<(Unset, Unset, Unset)> {
     Sampling::<(Unset, Unset, Unset)>::new()
 }
 
-impl_command_new!(Sampling<(Unset, Unset, Unset)>, 0b1000, 0b0000_0000);
-
 impl Sampling<(Unset, Unset, Unset)> {
     #[allow(clippy::identity_op)]
     pub fn new() -> Self {
