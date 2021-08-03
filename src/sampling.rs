@@ -11,9 +11,19 @@
 use crate::Command;
 use core::marker::PhantomData;
 
-///Marker indicating Sampling concern
+/// Builder for sampling command
+#[derive(Debug, Eq, PartialEq)]
 pub struct Sampling<T> {
+    data: u16,
     t: PhantomData<T>,
+}
+
+impl<T> Copy for Sampling<T> {}
+
+impl<T> Clone for Sampling<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 /// Marker trait to say a marker correspnd to something set
@@ -38,14 +48,24 @@ impl IsSet for SrIsSet {}
 /// Marker used to indicate something is not yet defined but required to be.
 pub struct Unset;
 
-pub fn sampling_command_builder() -> Command<Sampling<(Unset, Unset, Unset)>> {
-    Command::<Sampling<(Unset, Unset, Unset)>>::new()
+pub fn sampling_command_builder() -> Sampling<(Unset, Unset, Unset)> {
+    Sampling::<(Unset, Unset, Unset)>::new()
 }
 
 impl_command_new!(Sampling<(Unset, Unset, Unset)>, 0b1000, 0b0000_0000);
 
+impl Sampling<(Unset, Unset, Unset)> {
+    #[allow(clippy::identity_op)]
+    pub fn new() -> Self {
+        Self {
+            data: 0b1000 << 9 | 0b0000_0000,
+            t: PhantomData::<(Unset, Unset, Unset)>,
+        }
+    }
+}
+
 //it's always safe to manipulate those fields
-impl<T> Command<Sampling<T>> {
+impl<T> Sampling<T> {
     pub fn clkidiv2(self) -> Clkidiv2<T> {
         Clkidiv2 { cmd: self }
     }
@@ -55,16 +75,19 @@ impl<T> Command<Sampling<T>> {
 }
 
 //Once sr have been explicitly set, a valid command can be instanciated
-impl<MODE, BOSR> Command<Sampling<(MODE, BOSR, SrIsSet)>> {
+impl<MODE, BOSR> Sampling<(MODE, BOSR, SrIsSet)> {
     /// Instanciate a command
-    pub fn into_command(self) -> Self {
-        self
+    pub fn into_command(self) -> Command<()> {
+        Command::<()> {
+            data: self.data,
+            t: PhantomData::<()>,
+        }
     }
 }
 
 //make the normal/usb mode only settable once (over constraint?)
 //prevent to change normal/ub mode once sr is set
-impl<BOSR> Command<Sampling<(Unset, BOSR, Unset)>> {
+impl<BOSR> Sampling<(Unset, BOSR, Unset)> {
     pub fn usb_normal(self) -> UsbNormal<(Unset, BOSR, Unset)> {
         UsbNormal { cmd: self }
     }
@@ -72,14 +95,14 @@ impl<BOSR> Command<Sampling<(Unset, BOSR, Unset)>> {
 
 //make the bosr bit only settable once (over constraint?)
 //prevent to change bosr bit once sr is set
-impl<MODE> Command<Sampling<(MODE, Unset, Unset)>> {
+impl<MODE> Sampling<(MODE, Unset, Unset)> {
     pub fn bosr(self) -> Bosr<(MODE, Unset, Unset)> {
         Bosr { cmd: self }
     }
 }
 
 //When Usb mode is explicitly set, enforce bosr is set before setting sr
-impl<BOSR, SR> Command<Sampling<(Usb, BOSR, SR)>>
+impl<BOSR, SR> Sampling<(Usb, BOSR, SR)>
 where
     BOSR: IsSet,
 {
@@ -90,194 +113,194 @@ where
 
 //When Normal mode, sr validity is no affect by bosr, so no need to explicitly set it before setting
 //SR
-impl<BOSR, SR> Command<Sampling<(Normal, BOSR, SR)>> {
+impl<BOSR, SR> Sampling<(Normal, BOSR, SR)> {
     pub fn sr(self) -> Sr<(Normal, BOSR, SR)> {
         Sr { cmd: self }
     }
 }
 
 pub struct UsbNormal<T> {
-    cmd: Command<Sampling<T>>,
+    cmd: Sampling<T>,
 }
 
 impl<MODE, BOSR, SR> UsbNormal<(MODE, BOSR, SR)> {
     #[must_use]
-    pub fn clear_bit(mut self) -> Command<Sampling<(Normal, BOSR, SR)>> {
+    pub fn clear_bit(mut self) -> Sampling<(Normal, BOSR, SR)> {
         self.cmd.data &= !(0b1 << 0);
-        Command::<Sampling<(Normal, BOSR, SR)>> {
+        Sampling::<(Normal, BOSR, SR)> {
             data: self.cmd.data,
-            t: PhantomData::<Sampling<(Normal, BOSR, SR)>>,
+            t: PhantomData::<(Normal, BOSR, SR)>,
         }
     }
     #[must_use]
-    pub fn set_bit(mut self) -> Command<Sampling<(Usb, BOSR, SR)>> {
+    pub fn set_bit(mut self) -> Sampling<(Usb, BOSR, SR)> {
         self.cmd.data |= 0b1 << 0;
-        Command::<Sampling<(Usb, BOSR, SR)>> {
+        Sampling::<(Usb, BOSR, SR)> {
             data: self.cmd.data,
-            t: PhantomData::<Sampling<(Usb, BOSR, SR)>>,
+            t: PhantomData::<(Usb, BOSR, SR)>,
         }
     }
     #[must_use]
-    pub fn normal(mut self) -> Command<Sampling<(Normal, BOSR, SR)>> {
+    pub fn normal(mut self) -> Sampling<(Normal, BOSR, SR)> {
         self.cmd.data &= !(0b1 << 0);
-        Command::<Sampling<(Normal, BOSR, SR)>> {
+        Sampling::<(Normal, BOSR, SR)> {
             data: self.cmd.data,
-            t: PhantomData::<Sampling<(Normal, BOSR, SR)>>,
+            t: PhantomData::<(Normal, BOSR, SR)>,
         }
     }
     #[must_use]
-    pub fn usb(mut self) -> Command<Sampling<(Usb, BOSR, SR)>> {
+    pub fn usb(mut self) -> Sampling<(Usb, BOSR, SR)> {
         self.cmd.data |= 0b1 << 0;
-        Command::<Sampling<(Usb, BOSR, SR)>> {
+        Sampling::<(Usb, BOSR, SR)> {
             data: self.cmd.data,
-            t: PhantomData::<Sampling<(Usb, BOSR, SR)>>,
+            t: PhantomData::<(Usb, BOSR, SR)>,
         }
     }
 }
 
 pub struct Bosr<T> {
-    cmd: Command<Sampling<T>>,
+    cmd: Sampling<T>,
 }
 
 impl<MODE, BOSR, SR> Bosr<(MODE, BOSR, SR)> {
     #[must_use]
-    pub fn clear_bit(mut self) -> Command<Sampling<(MODE, BosrIsClear, SR)>> {
+    pub fn clear_bit(mut self) -> Sampling<(MODE, BosrIsClear, SR)> {
         self.cmd.data &= !(0b1 << 1);
-        Command::<Sampling<(MODE, BosrIsClear, SR)>> {
+        Sampling::<(MODE, BosrIsClear, SR)> {
             data: self.cmd.data,
-            t: PhantomData::<Sampling<(MODE, BosrIsClear, SR)>>,
+            t: PhantomData::<(MODE, BosrIsClear, SR)>,
         }
     }
     #[must_use]
-    pub fn set_bit(mut self) -> Command<Sampling<(MODE, BosrIsSet, SR)>> {
+    pub fn set_bit(mut self) -> Sampling<(MODE, BosrIsSet, SR)> {
         self.cmd.data |= 0b1 << 1;
-        Command::<Sampling<(MODE, BosrIsSet, SR)>> {
+        Sampling::<(MODE, BosrIsSet, SR)> {
             data: self.cmd.data,
-            t: PhantomData::<Sampling<(MODE, BosrIsSet, SR)>>,
+            t: PhantomData::<(MODE, BosrIsSet, SR)>,
         }
     }
 }
 
 pub struct Sr<T> {
-    cmd: Command<Sampling<T>>,
+    cmd: Sampling<T>,
 }
 
-impl<MODE,BOSR,SR> Sr <(MODE,BOSR,SR)> {
-    //impl_bits!(unsafe, Command<Sampling<T>>, 4, 2);
+impl<MODE, BOSR, SR> Sr<(MODE, BOSR, SR)> {
+    //impl_bits!(unsafe, Sampling<T>, 4, 2);
     /// Set the field with raw bits.
     ///
     /// # Safety
     ///
     /// Some bit combinations are invalid, please read the datasheet.
-    pub unsafe fn bits(mut self, value: u8) -> Command<Sampling<(MODE,BOSR, SrIsSet)>> {
+    pub unsafe fn bits(mut self, value: u8) -> Sampling<(MODE, BOSR, SrIsSet)> {
         let mask = !((!0) << 4) << 2;
         self.cmd.data = self.cmd.data & !mask | (value as u16) << 2 & mask;
-        Command::<Sampling<(MODE,BOSR, SrIsSet)>> {
+        Sampling::<(MODE, BOSR, SrIsSet)> {
             data: self.cmd.data,
-            t: PhantomData::<Sampling<(MODE,BOSR, SrIsSet)>>,
+            t: PhantomData::<(MODE, BOSR, SrIsSet)>,
         }
     }
 }
 
 impl<BOSR, SR> Sr<(Normal, BOSR, SR)> {
     #[must_use]
-    pub fn sr_0b0000(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b0000(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b0000) }
     }
     #[must_use]
-    pub fn sr_0b0001(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b0001(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b0001) }
     }
     #[must_use]
-    pub fn sr_0b0010(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b0010(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b0010) }
     }
     #[must_use]
-    pub fn sr_0b0011(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b0011(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b0011) }
     }
     #[must_use]
-    pub fn sr_0b0110(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b0110(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b0110) }
     }
     #[must_use]
-    pub fn sr_0b0111(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b0111(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b0111) }
     }
     #[must_use]
-    pub fn sr_0b1000(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b1000(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b1000) }
     }
     #[must_use]
-    pub fn sr_0b1001(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b1001(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b1001) }
     }
     #[must_use]
-    pub fn sr_0b1010(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b1010(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b1010) }
     }
     #[must_use]
-    pub fn sr_0b1011(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b1011(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b1011) }
     }
     #[must_use]
-    pub fn sr_0b1111(self) -> Command<Sampling<(Normal, BOSR, SrIsSet)>> {
+    pub fn sr_0b1111(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
         unsafe { self.bits(0b1111) }
     }
 }
 
 impl<SR> Sr<(Usb, BosrIsClear, SR)> {
     #[must_use]
-    pub fn sr_0b0000(self) -> Command<Sampling<(Usb, BosrIsClear, SrIsSet)>> {
+    pub fn sr_0b0000(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
         unsafe { self.bits(0b0000) }
     }
     #[must_use]
-    pub fn sr_0b0001(self) -> Command<Sampling<(Usb, BosrIsClear, SrIsSet)>> {
+    pub fn sr_0b0001(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
         unsafe { self.bits(0b0001) }
     }
     #[must_use]
-    pub fn sr_0b0010(self) -> Command<Sampling<(Usb, BosrIsClear, SrIsSet)>> {
+    pub fn sr_0b0010(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
         unsafe { self.bits(0b0010) }
     }
     #[must_use]
-    pub fn sr_0b0011(self) -> Command<Sampling<(Usb, BosrIsClear, SrIsSet)>> {
+    pub fn sr_0b0011(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
         unsafe { self.bits(0b0011) }
     }
     #[must_use]
-    pub fn sr_0b0110(self) -> Command<Sampling<(Usb, BosrIsClear, SrIsSet)>> {
+    pub fn sr_0b0110(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
         unsafe { self.bits(0b0110) }
     }
     #[must_use]
-    pub fn sr_0b0111(self) -> Command<Sampling<(Usb, BosrIsClear, SrIsSet)>> {
+    pub fn sr_0b0111(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
         unsafe { self.bits(0b0111) }
     }
 }
 
 impl<SR> Sr<(Usb, BosrIsSet, SR)> {
     #[must_use]
-    pub fn sr_0b1000(self) -> Command<Sampling<(Usb, BosrIsSet, SrIsSet)>> {
+    pub fn sr_0b1000(self) -> Sampling<(Usb, BosrIsSet, SrIsSet)> {
         unsafe { self.bits(0b1000) }
     }
     #[must_use]
-    pub fn sr_0b1001(self) -> Command<Sampling<(Usb, BosrIsSet, SrIsSet)>> {
+    pub fn sr_0b1001(self) -> Sampling<(Usb, BosrIsSet, SrIsSet)> {
         unsafe { self.bits(0b1001) }
     }
     #[must_use]
-    pub fn sr_0b1010(self) -> Command<Sampling<(Usb, BosrIsSet, SrIsSet)>> {
+    pub fn sr_0b1010(self) -> Sampling<(Usb, BosrIsSet, SrIsSet)> {
         unsafe { self.bits(0b1010) }
     }
     #[must_use]
-    pub fn sr_0b1011(self) -> Command<Sampling<(Usb, BosrIsSet, SrIsSet)>> {
+    pub fn sr_0b1011(self) -> Sampling<(Usb, BosrIsSet, SrIsSet)> {
         unsafe { self.bits(0b1011) }
     }
     #[must_use]
-    pub fn sr_0b1111(self) -> Command<Sampling<(Usb, BosrIsSet, SrIsSet)>> {
+    pub fn sr_0b1111(self) -> Sampling<(Usb, BosrIsSet, SrIsSet)> {
         unsafe { self.bits(0b1111) }
     }
 }
 
-impl_toggle_writer!(Clkidiv2<T>, Command<Sampling<T>>, 6);
-impl_toggle_writer!(Clkodiv2<T>, Command<Sampling<T>>, 7);
+impl_toggle_writer!(Clkidiv2<T>, Sampling<T>, 6);
+impl_toggle_writer!(Clkodiv2<T>, Sampling<T>, 7);
 
 #[cfg(test)]
 mod tests {
@@ -345,6 +368,5 @@ mod tests {
             .sr_0b0000()
             .bosr()
             .set_bit();
-
     }
 }
