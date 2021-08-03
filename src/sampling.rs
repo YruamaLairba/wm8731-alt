@@ -337,5 +337,14 @@ mod tests {
             .sr_0b0000()
             .usb_normal()
             .usb();
+        //error, cannot change bosr after sr is set
+        let _ = new_cmd
+            .usb_normal()
+            .normal()
+            .sr()
+            .sr_0b0000()
+            .bosr()
+            .set_bit();
+
     }
 }
