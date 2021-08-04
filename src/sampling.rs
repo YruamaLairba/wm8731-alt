@@ -11,7 +11,7 @@
 use crate::Command;
 use core::marker::PhantomData;
 
-/// Builder for sampling command
+/// Builder for sampling command.
 #[derive(Debug, Eq, PartialEq)]
 pub struct Sampling<T> {
     data: u16,
@@ -26,51 +26,53 @@ impl<T> Clone for Sampling<T> {
     }
 }
 
-/// Marker trait to say a marker correspnd to something set
+/// Marker trait to say a marker correspnd to something set.
 pub trait IsSet {}
 
-/// Marker used to indicate Normal mode;
+/// Marker used to indicate Normal mode.
 pub struct Normal;
 impl IsSet for Normal {}
-/// Marker used to indicate USB mode;
+/// Marker used to indicate USB mode.
 pub struct Usb;
 impl IsSet for Usb {}
-/// Marker used to indicate BOSR bit is set;
+/// Marker used to indicate BOSR bit is set.
 pub struct BosrIsSet;
 impl IsSet for BosrIsSet {}
-/// Marker used to indicate BOSR bit is clear;
+/// Marker used to indicate BOSR bit is clear.
 pub struct BosrIsClear;
 impl IsSet for BosrIsClear {}
-/// Marker to indicate Sr is exeplictly set;
+/// Marker to indicate Sr is exeplictly set.
 pub struct SrIsSet;
 impl IsSet for SrIsSet {}
 
 /// Marker used to indicate something is not yet defined but required to be.
 pub struct Unset;
 
-/// Marker trait to say a marker correspond to a master clock value
+/// Marker trait to say a marker correspond to a master clock value.
 pub trait Mclk {}
 
-///Marker indicating use of 12.288Mhz internal master clock (normal mode)
+///Marker indicating use of 12.288Mhz internal master clock (normal mode).
 pub struct Mclk12M288;
 impl Mclk for Mclk12M288 {}
-///Marker indicating use of 18.432Mhz internal master clock (normal mode)
+///Marker indicating use of 18.432Mhz internal master clock (normal mode).
 pub struct Mclk18M432;
 impl Mclk for Mclk18M432 {}
-///Marker indicating use of 11.2896Mhz internal master clock (normal mode)
+///Marker indicating use of 11.2896Mhz internal master clock (normal mode).
 pub struct Mclk11M2896;
 impl Mclk for Mclk11M2896 {}
-///Marker indicating use of 16.9344Mhz internal master clock (normal mode)
+///Marker indicating use of 16.9344Mhz internal master clock (normal mode).
 pub struct Mclk16M9344;
 impl Mclk for Mclk16M9344 {}
 ///Marker indicating use of 12Mhz internal master clock (USB mode).
 pub struct Mclk12M;
 impl Mclk for Mclk12M {}
 
+/// Instanciate a command builder for sampling configuration.
 pub fn sampling_command_builder() -> Sampling<(Unset, Unset, Unset)> {
     Sampling::<(Unset, Unset, Unset)>::new()
 }
 
+/// Instanciate a command builder to set sampling configuration for a particular master clock.
 pub fn sampling_command_builder_mclk<MCLK>() -> Sampling<(MCLK, Unset)>
 where
     MCLK: Mclk,
@@ -89,7 +91,9 @@ where
         SampleRate::<(MCLK, SR)> { cmd: self }
     }
 }
-
+/// Virtual field writer for more meaningfull sampling rate setting.
+///
+/// This actually write USB/NORMAL, BOSR, and SR fields.
 pub struct SampleRate<T> {
     cmd: Sampling<T>,
 }
@@ -106,9 +110,204 @@ impl<MCLK, SR> SampleRate<(MCLK, SR)> {
 }
 
 impl<SR> SampleRate<(Mclk12M288, SR)> {
+    ///Set 48khz sampling rate for ADC and DAC.
     #[must_use]
     pub fn adc48k_dac48k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
         unsafe { self.bits(0b000000) }
+    }
+    ///Set sampling rate of 48khz for ADC and 8khz for DAC.
+    #[must_use]
+    pub fn adc48k_dac8k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+        unsafe { self.bits(0b000100) }
+    }
+    ///Set sampling rate of 8khz for ADC and 48khz for DAC.
+    #[must_use]
+    pub fn adc8k_dac48k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+        unsafe { self.bits(0b001000) }
+    }
+    ///Set 8khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc8k_dac8k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+        unsafe { self.bits(0b001100) }
+    }
+    ///Set 32khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc32k_dac32k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+        unsafe { self.bits(0b011000) }
+    }
+    ///Set 96khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc96k_dac96k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+        unsafe { self.bits(0b011100) }
+    }
+}
+
+impl<SR> SampleRate<(Mclk18M432, SR)> {
+    ///Set 48khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc48k_dac48k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+        unsafe { self.bits(0b000010) }
+    }
+    ///Set sampling rate of 48khz for ADC and 8khz for DAC.
+    #[must_use]
+    pub fn adc48k_dac8k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+        unsafe { self.bits(0b000110) }
+    }
+    ///Set sampling rate of 8khz for ADC and 48khz for DAC.
+    #[must_use]
+    pub fn adc8k_dac48k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+        unsafe { self.bits(0b001010) }
+    }
+    ///Set 8khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc8k_dac8k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+        unsafe { self.bits(0b001110) }
+    }
+    ///Set 32khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc32k_dac32k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+        unsafe { self.bits(0b011010) }
+    }
+    ///Set 96khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc96k_dac96k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+        unsafe { self.bits(0b011110) }
+    }
+}
+
+impl<SR> SampleRate<(Mclk11M2896, SR)> {
+    ///Set 44.1khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc44k1_dac44k1(self) -> Sampling<(Mclk11M2896, SrIsSet)> {
+        unsafe { self.bits(0b100000) }
+    }
+    ///Set sampling rate of 44.1khz for ADC and approximatively 8khz for DAC.
+    ///
+    ///The actual DAC sampling rate is 8.018kHz
+    #[must_use]
+    pub fn adc44k1_dac8k(self) -> Sampling<(Mclk11M2896, SrIsSet)> {
+        unsafe { self.bits(0b100100) }
+    }
+    ///Set sampling rate of approximatively 8khz for ADC and 44.1khz for DAC.
+    ///
+    ///The actual ADC sampling rate is 8.018kHz
+    #[must_use]
+    pub fn adc8k_dac44k1(self) -> Sampling<(Mclk11M2896, SrIsSet)> {
+        unsafe { self.bits(0b101000) }
+    }
+    ///Set approximatively 8khz sampling rate for ADC and DAC.
+    ///
+    ///The actual sampling rate is 8.018kHz
+    #[must_use]
+    pub fn adc8k_dac8k(self) -> Sampling<(Mclk11M2896, SrIsSet)> {
+        unsafe { self.bits(0b101100) }
+    }
+    ///Set 88.2khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc88k2_dac88k2(self) -> Sampling<(Mclk11M2896, SrIsSet)> {
+        unsafe { self.bits(0b111100) }
+    }
+}
+
+impl<SR> SampleRate<(Mclk16M9344, SR)> {
+    ///Set 44.1khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc44k1_dac44k1(self) -> Sampling<(Mclk16M9344, SrIsSet)> {
+        unsafe { self.bits(0b100010) }
+    }
+    ///Set sampling rate of 44.1khz for ADC and approximatively 8khz for DAC.
+    ///
+    ///The actual DAC sampling rate is 8.018kHz
+    #[must_use]
+    pub fn adc44k1_dac8k(self) -> Sampling<(Mclk16M9344, SrIsSet)> {
+        unsafe { self.bits(0b100110) }
+    }
+    ///Set sampling rate of approximatively 8khz for ADC and 44.1khz for DAC.
+    ///
+    ///The actual ADC sampling rate is 8.018kHz
+    #[must_use]
+    pub fn adc8k_dac44k1(self) -> Sampling<(Mclk16M9344, SrIsSet)> {
+        unsafe { self.bits(0b101010) }
+    }
+    ///Set approximatively 8khz sampling rate for ADC and DAC.
+    ///
+    ///The actual sampling rate is 8.018kHz
+    #[must_use]
+    pub fn adc8k_dac8k(self) -> Sampling<(Mclk16M9344, SrIsSet)> {
+        unsafe { self.bits(0b101110) }
+    }
+    ///Set 88.2khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc88k2_dac88k2(self) -> Sampling<(Mclk16M9344, SrIsSet)> {
+        unsafe { self.bits(0b111110) }
+    }
+}
+
+impl<SR> SampleRate<(Mclk12M, SR)> {
+    ///Set 48khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc48k_dac48k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b000001) }
+    }
+    ///Set approximatively 44.1khz sampling rate for ADC and DAC.
+    ///
+    ///The actual sampling rate is 44.118kHz.
+    #[must_use]
+    pub fn adc44k1_dac44k1(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b100011) }
+    }
+    ///Set sampling rate of 48khz for ADC and 8khz for DAC.
+    #[must_use]
+    pub fn adc48k_dac8k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b000101) }
+    }
+    ///Set sampling rate of approximatively 44.1khz for ADC and approximatively 8khz for DAC.
+    ///
+    ///The actual sampling rate are 44.118kHz for the ADC and 8.021kHz for the DAC.
+    #[must_use]
+    pub fn adc44k1_dac8k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b100111) }
+    }
+    ///Set sampling rate of 8khz for ADC and 48khz for DAC.
+    #[must_use]
+    pub fn adc8k_dac48k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b001001) }
+    }
+    ///Set sampling rate of approximatively 8khz for ADC and approximatively 44.1khz for DAC.
+    ///
+    ///The actual sampling rate are 8.021kHz for the ADC and 44.118kHz  for the DAC.
+    #[must_use]
+    pub fn adc8k_dac44k1(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b101011) }
+    }
+    ///Set 8khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc8k_dac8k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b001101) }
+    }
+    ///Set approximatively 8khz sampling rate for ADC and DAC.
+    ///
+    ///The actual sampling rate is 8.021kHz.
+    #[must_use]
+    pub fn adc8k_dac8k_bis(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b101111) }
+    }
+    ///Set 32khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc32k_dac32k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b011001) }
+    }
+    ///Set 96khz sampling rate for ADC and DAC.
+    #[must_use]
+    pub fn adc96k_dac96k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b011101) }
+    }
+    ///Set approximatively 88.2kHz sampling rate for ADC and DAC.
+    ///
+    ///The actual sampling rate is 88.235kHz.
+    #[must_use]
+    pub fn adc88k2_dac88k2(self) -> Sampling<(Mclk12M, SrIsSet)> {
+        unsafe { self.bits(0b111111) }
     }
 }
 
@@ -177,6 +376,7 @@ impl<BOSR, SR> Sampling<(Normal, BOSR, SR)> {
     }
 }
 
+/// Field writer. Allow to select USB or Normal mode.
 pub struct UsbNormal<T> {
     cmd: Sampling<T>,
 }
@@ -216,6 +416,7 @@ impl<MODE, BOSR, SR> UsbNormal<(MODE, BOSR, SR)> {
     }
 }
 
+/// Field writer. Select the Base Over-Sampling Rate.
 pub struct Bosr<T> {
     cmd: Sampling<T>,
 }
@@ -239,6 +440,7 @@ impl<MODE, BOSR, SR> Bosr<(MODE, BOSR, SR)> {
     }
 }
 
+/// Field writer. Allow to write raw bits into the sr field.
 pub struct Sr<T> {
     cmd: Sampling<T>,
 }
