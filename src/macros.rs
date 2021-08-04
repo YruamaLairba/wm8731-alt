@@ -24,6 +24,7 @@ macro_rules! impl_bits {
 ///Template for raw bit write to one bit field
 macro_rules! impl_bit {
     ($ret:ty, $pos:literal) => {
+        ///Writes raw bit to the field.
         #[must_use]
         pub fn bit(mut self, value: bool) -> $ret {
             self.cmd.data = self.cmd.data & !(1 << $pos) | (value as u16) << $pos;
@@ -42,6 +43,7 @@ macro_rules! impl_set_bit {
         }
     };
     ($ret:ty, $pos:literal) => {
+        /// Sets the bit field.
         #[must_use]
         pub fn set_bit(mut self) -> $ret {
             self.cmd.data |= 0b1 << $pos;
@@ -71,6 +73,7 @@ macro_rules! impl_clear_bit {
         }
     };
     ($ret:ty, $pos:literal) => {
+        /// Clears the bit field.
         #[must_use]
         pub fn clear_bit(mut self) -> $ret {
             self.cmd.data &= !(0b1 << $pos);
@@ -102,6 +105,7 @@ macro_rules! impl_bitsetters {
 
 macro_rules! impl_toggle_writer {
     ($name:ident$(<$mark:tt>)?, $ret:ty, $pos:literal) => {
+        ///Field writer.
         pub struct $name $(<$mark>)? {
             cmd: $ret,
         }
