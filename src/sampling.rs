@@ -48,8 +48,68 @@ impl IsSet for SrIsSet {}
 /// Marker used to indicate something is not yet defined but required to be.
 pub struct Unset;
 
+/// Marker trait to say a marker correspond to a master clock value
+pub trait Mclk {}
+
+///Marker indicating use of 12.288Mhz internal master clock (normal mode)
+pub struct Mclk12M288;
+impl Mclk for Mclk12M288 {}
+///Marker indicating use of 18.432Mhz internal master clock (normal mode)
+pub struct Mclk18M432;
+impl Mclk for Mclk18M432 {}
+///Marker indicating use of 11.2896Mhz internal master clock (normal mode)
+pub struct Mclk11M2896;
+impl Mclk for Mclk11M2896 {}
+///Marker indicating use of 16.9344Mhz internal master clock (normal mode)
+pub struct Mclk16M9344;
+impl Mclk for Mclk16M9344 {}
+///Marker indicating use of 12Mhz internal master clock (USB mode).
+pub struct Mclk12M;
+impl Mclk for Mclk12M {}
+
 pub fn sampling_command_builder() -> Sampling<(Unset, Unset, Unset)> {
     Sampling::<(Unset, Unset, Unset)>::new()
+}
+
+pub fn sampling_command_builder_mclk<MCLK>() -> Sampling<(MCLK, Unset)>
+where
+    MCLK: Mclk,
+{
+    Sampling::<(MCLK, Unset)> {
+        data: 0b1000 << 9,
+        t: PhantomData::<(MCLK, Unset)>,
+    }
+}
+
+impl<MCLK, SR> Sampling<(MCLK, SR)>
+where
+    MCLK: Mclk,
+{
+    pub fn sample_rate(self) -> SampleRate<(MCLK, SR)> {
+        SampleRate::<(MCLK, SR)> { cmd: self }
+    }
+}
+
+pub struct SampleRate<T> {
+    cmd: Sampling<T>,
+}
+
+impl<MCLK, SR> SampleRate<(MCLK, SR)> {
+    unsafe fn bits(mut self, value: u8) -> Sampling<(MCLK, SrIsSet)> {
+        let mask = !((!0) << 6);
+        self.cmd.data = self.cmd.data & !mask | (value as u16) << 2 & mask;
+        Sampling::<(MCLK, SrIsSet)> {
+            data: self.cmd.data,
+            t: PhantomData::<(MCLK, SrIsSet)>,
+        }
+    }
+}
+
+impl<SR> SampleRate<(Mclk12M288, SR)> {
+    #[must_use]
+    pub fn adc48k_dac48k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+        unsafe { self.bits(0b000000) }
+    }
 }
 
 impl Sampling<(Unset, Unset, Unset)> {
@@ -333,6 +393,10 @@ mod tests {
         let new_cmd = sampling_command_builder();
         //should warn, you may think you change the command but this is not the case
         new_cmd.usb_normal().normal();
+
+        let cmd = sampling_command_builder_mclk::<Mclk12M288>();
+        //should warn, you may think you change the command but this is not the case
+        cmd.sample_rate().adc48k_dac48k();
     }
     // all() to compile, any() to not compile
     #[cfg(any())]
