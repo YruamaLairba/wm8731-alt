@@ -6,6 +6,7 @@ use core::marker::PhantomData;
 
 ///Marker indicating headphone ouputs concern
 pub struct HeadphoneOut<CHANNEL> {
+    data: u16,
     channel: PhantomData<CHANNEL>,
 }
 
@@ -15,25 +16,35 @@ pub type LeftHeadphoneOut = HeadphoneOut<Left>;
 ///Marker indicating left line in concern
 pub type RightHeadphoneOut = HeadphoneOut<Right>;
 
-impl Command<LeftHeadphoneOut> {
+/// Instanciate a builder for left line in configuration.
+pub fn left_headphone_out() -> LeftHeadphoneOut {
+    LeftHeadphoneOut::new()
+}
+
+/// Instanciate a builder for right line in configuration.
+pub fn right_headphone_out() -> RightHeadphoneOut {
+    RightHeadphoneOut::new()
+}
+
+impl LeftHeadphoneOut {
     pub fn new() -> Self {
         Self {
             data: 0x2 << 9 | 0b0_0111_1001,
-            t: PhantomData::<LeftHeadphoneOut>,
+            channel: PhantomData::<Left>,
         }
     }
 }
 
-impl Command<RightHeadphoneOut> {
+impl RightHeadphoneOut {
     pub fn new() -> Self {
         Self {
             data: 0x3 << 9 | 0b0_0111_1001,
-            t: PhantomData::<RightHeadphoneOut>,
+            channel: PhantomData::<Right>,
         }
     }
 }
 
-impl<CHANNEL> Command<HeadphoneOut<CHANNEL>> {
+impl<CHANNEL> HeadphoneOut<CHANNEL> {
     pub fn hpvol(self) -> Hpvol<CHANNEL> {
         Hpvol { cmd: self }
     }
@@ -43,16 +54,23 @@ impl<CHANNEL> Command<HeadphoneOut<CHANNEL>> {
     pub fn hpboth(self) -> Hpboth<CHANNEL> {
         Hpboth { cmd: self }
     }
+    pub fn into_command(self) -> Command<()> {
+        Command::<()> {
+            data: self.data,
+            t: PhantomData::<()>,
+        }
+    }
+
 }
 
 ///Writer of LHPVOL or RHPVOL fields. Control line input volume.
 pub struct Hpvol<CHANNEL> {
-    cmd: Command<HeadphoneOut<CHANNEL>>,
+    cmd: HeadphoneOut<CHANNEL>,
 }
 
 impl<CHANNEL> Hpvol<CHANNEL> {
-    impl_bits!(Command<HeadphoneOut<CHANNEL>>, 7, 0);
+    impl_bits!(HeadphoneOut<CHANNEL>, 7, 0);
 }
 
-impl_toggle_writer!(Zcen<CHANNEL>, Command<HeadphoneOut<CHANNEL>>, 7);
-impl_toggle_writer!(Hpboth<CHANNEL>, Command<HeadphoneOut<CHANNEL>>, 8);
+impl_toggle_writer!(Zcen<CHANNEL>, HeadphoneOut<CHANNEL>, 7);
+impl_toggle_writer!(Hpboth<CHANNEL>, HeadphoneOut<CHANNEL>, 8);
