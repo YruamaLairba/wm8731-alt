@@ -19,7 +19,7 @@
 //! ```
 //! # use wm8731_alt::sampling::*;
 //! //instanciate the builder
-//! let cmd = sampling_command_builder_mclk(Mclk12M288);
+//! let cmd = sampling_with_mclk(Mclk12M288);
 //! //setup the sampling rate
 //! let cmd = cmd.sample_rate().adc48k_dac48k();
 //! //build the command
@@ -38,7 +38,7 @@
 //! ```
 //! # use wm8731_alt::sampling::*;
 //! //instantiate the builder
-//! let cmd = sampling_command_builder();
+//! let cmd = sampling();
 //! //normal mode operation
 //! let cmd = cmd.usb_normal().normal();
 //! //write bosr bit
@@ -62,19 +62,19 @@
 //! # {
 //! # use wm8731_alt::sampling::*;
 //! //error, sample rate require to be explicitly set
-//! let cmd = sampling_command_builder_mclk(Mclk12M288).into_command();
+//! let cmd = sampling_with_mclk(Mclk12M288).into_command();
 //! //error, this sampling rate setup is impossible with the current master clock
-//! let cmd = sampling_command_builder_mclk(Mclk12M288).sample_rate().adc44k1_dac44k1();
+//! let cmd = sampling_with_mclk(Mclk12M288).sample_rate().adc44k1_dac44k1();
 //! //error, sr require to be explicitly set
-//! let cmd = sampling_command_builder().into_command();
+//! let cmd = sampling().into_command();
 //! //error, USB/NORMAL and BOSR need to be set before SR because it affect SR validity
-//! let cmd = sampling_command_builder().sr().sr_0b0000();
+//! let cmd = sampling().sr().sr_0b0000();
 //! //error, cannot change USB/NORMAL and BOSR after SR because it affect SR validity
 //! let cmd =
-//! sampling_command_builder().usb_normal().usb().bosr().clear_bit().sr().sr_0b0000().bosr().set_bit();
+//! sampling().usb_normal().usb().bosr().clear_bit().sr().sr_0b0000().bosr().set_bit();
 //! //error, USB/NORMAL, BOSR, SR combination is invalid
 //! let cmd =
-//! sampling_command_builder().usb_normal().usb().bosr().set_bit().sr().sr_0b0000();
+//! sampling().usb_normal().usb().bosr().set_bit().sr().sr_0b0000();
 //! # }
 //! ```
 //!
@@ -141,12 +141,12 @@ pub struct Mclk12M;
 impl Mclk for Mclk12M {}
 
 /// Instanciate a command builder for sampling configuration.
-pub fn sampling_command_builder() -> Sampling<(Unset, Unset, Unset)> {
+pub fn sampling() -> Sampling<(Unset, Unset, Unset)> {
     Sampling::<(Unset, Unset, Unset)>::new()
 }
 
 /// Instanciate a command builder to set sampling configuration for a particular master clock.
-pub fn sampling_command_builder_mclk<MCLK>(_: MCLK) -> Sampling<(MCLK, Unset)>
+pub fn sampling_with_mclk<MCLK>(_: MCLK) -> Sampling<(MCLK, Unset)>
 where
     MCLK: Mclk,
 {
@@ -652,7 +652,7 @@ mod tests {
     // all() to compile, any() to not compile
     #[cfg(all())]
     fn _should_compile() {
-        let new_cmd = sampling_command_builder();
+        let new_cmd = sampling();
         // for normal mode, setting bosr in not actually required
         let _ = new_cmd
             .usb_normal()
@@ -676,18 +676,18 @@ mod tests {
     // all() to compile, any() to not compile
     #[cfg(any())]
     fn _should_compile_warn() {
-        let new_cmd = sampling_command_builder();
+        let new_cmd = sampling();
         //should warn, you may think you change the command but this is not the case
         new_cmd.usb_normal().normal();
 
-        let cmd = sampling_command_builder_mclk(Mclk12M288);
+        let cmd = sampling_with_mclk(Mclk12M288);
         //should warn, you may think you change the command but this is not the case
         cmd.sample_rate().adc48k_dac48k();
     }
     // all() to compile, any() to not compile
     #[cfg(any())]
     fn _should_compile_error() {
-        let new_cmd = sampling_command_builder();
+        let new_cmd = sampling();
         //error, bosr not set in usb mode sr not available
         let _ = new_cmd.usb_normal().usb().sr().sr_0b1111();
         //error, cannot set this sr value with this bosr value
