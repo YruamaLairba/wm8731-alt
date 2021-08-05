@@ -4,12 +4,31 @@
 use crate::Command;
 use core::marker::PhantomData;
 
-///Marker indicating Analogue Audio Path concern
-pub struct AnalogueAudioPath;
+/// Analogue audio path configuration builder.
+#[derive(Debug, Eq, PartialEq)]
+pub struct AnalogueAudioPath {
+    data: u16,
+}
 
-impl_command_new!(AnalogueAudioPath, 0b100, 0b1010);
+impl Copy for AnalogueAudioPath {}
 
-impl Command<AnalogueAudioPath> {
+impl Clone for AnalogueAudioPath {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+/// Instanciate a builder for Analogue audio path configuration.
+pub fn analogue_audio_path() -> AnalogueAudioPath {
+    AnalogueAudioPath::new()
+}
+
+impl AnalogueAudioPath {
+    pub fn new() -> Self {
+        Self {
+            data: 0b100 << 9 | 0b1010,
+        }
+    }
     pub fn micboost(self) -> Micboost {
         Micboost { cmd: self }
     }
@@ -31,31 +50,37 @@ impl Command<AnalogueAudioPath> {
     pub fn sideatt(self) -> Sideatt {
         Sideatt { cmd: self }
     }
+    pub fn into_command(self) -> Command<()> {
+        Command::<()> {
+            data: self.data,
+            t: PhantomData::<()>,
+        }
+    }
 }
 
-impl_toggle_writer!(Micboost, Command<AnalogueAudioPath>, 0);
-impl_toggle_writer!(Mutemic, Command<AnalogueAudioPath>, 1);
-impl_toggle_writer!(Bypass, Command<AnalogueAudioPath>, 3);
-impl_toggle_writer!(Sidetone, Command<AnalogueAudioPath>, 5);
+impl_toggle_writer!(Micboost, AnalogueAudioPath, 0);
+impl_toggle_writer!(Mutemic, AnalogueAudioPath, 1);
+impl_toggle_writer!(Bypass, AnalogueAudioPath, 3);
+impl_toggle_writer!(Sidetone, AnalogueAudioPath, 5);
 
-pub enum InselV{
+pub enum InselV {
     Line,
     Microphone,
 }
 
 pub struct Insel {
-    cmd: Command<AnalogueAudioPath>
+    cmd: AnalogueAudioPath,
 }
 
 impl Insel {
-    impl_bit!(Command<AnalogueAudioPath>,2);
-    impl_set_bit!(Command<AnalogueAudioPath>,2);
-    impl_clear_bit!(Command<AnalogueAudioPath>,2);
-    impl_set_bit!(microphone, Command<AnalogueAudioPath>,2);
-    impl_clear_bit!(line, Command<AnalogueAudioPath>,2);
+    impl_bit!(AnalogueAudioPath, 2);
+    impl_set_bit!(AnalogueAudioPath, 2);
+    impl_clear_bit!(AnalogueAudioPath, 2);
+    impl_set_bit!(microphone, AnalogueAudioPath, 2);
+    impl_clear_bit!(line, AnalogueAudioPath, 2);
 
     #[must_use]
-    pub fn variant(self,value: InselV) -> Command<AnalogueAudioPath> {
+    pub fn variant(self, value: InselV) -> AnalogueAudioPath {
         match value {
             InselV::Microphone => self.microphone(),
             InselV::Line => self.line(),
@@ -63,25 +88,24 @@ impl Insel {
     }
 }
 
-
-pub enum DacselV{
+pub enum DacselV {
     Deselect,
     Select,
 }
 
 pub struct Dacsel {
-    cmd: Command<AnalogueAudioPath>
+    cmd: AnalogueAudioPath,
 }
 
 impl Dacsel {
-    impl_bit!(Command<AnalogueAudioPath>,2);
-    impl_set_bit!(Command<AnalogueAudioPath>,2);
-    impl_clear_bit!(Command<AnalogueAudioPath>,2);
-    impl_set_bit!(select, Command<AnalogueAudioPath>,2);
-    impl_clear_bit!(deselect, Command<AnalogueAudioPath>,2);
+    impl_bit!(AnalogueAudioPath, 2);
+    impl_set_bit!(AnalogueAudioPath, 2);
+    impl_clear_bit!(AnalogueAudioPath, 2);
+    impl_set_bit!(select, AnalogueAudioPath, 2);
+    impl_clear_bit!(deselect, AnalogueAudioPath, 2);
 
     #[must_use]
-    pub fn variant(self,value: DacselV) -> Command<AnalogueAudioPath> {
+    pub fn variant(self, value: DacselV) -> AnalogueAudioPath {
         match value {
             DacselV::Deselect => self.deselect(),
             DacselV::Select => self.select(),
@@ -90,9 +114,9 @@ impl Dacsel {
 }
 
 pub struct Sideatt {
-    cmd: Command<AnalogueAudioPath>
+    cmd: AnalogueAudioPath,
 }
 
 impl Sideatt {
-    impl_bits!(Command<AnalogueAudioPath>,2,6);
+    impl_bits!(AnalogueAudioPath, 2, 6);
 }
