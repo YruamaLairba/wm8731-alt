@@ -4,12 +4,31 @@
 use crate::Command;
 use core::marker::PhantomData;
 
-///Marker indicating Digital Audio Path concern
-pub struct DigitalAudioInterface;
+/// builder for digital audio interface configuration
+#[derive(Debug, Eq, PartialEq)]
+pub struct DigitalAudioInterface {
+    data: u16,
+}
 
-impl_command_new!(DigitalAudioInterface, 0b110, 0b0000_1010);
+impl Copy for DigitalAudioInterface {}
 
-impl Command<DigitalAudioInterface> {
+impl Clone for DigitalAudioInterface {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+/// Instanciate a builder for digital audio interface configuration.
+pub fn digital_audio_interface() -> DigitalAudioInterface {
+    DigitalAudioInterface::new()
+}
+
+impl DigitalAudioInterface {
+    pub fn new() -> Self {
+        Self {
+            data: 0b111 << 9 | 0b1010,
+        }
+    }
     pub fn format(self) -> Format {
         Format { cmd: self }
     }
@@ -28,6 +47,12 @@ impl Command<DigitalAudioInterface> {
     pub fn bclkinv(self) -> Bclkinv {
         Bclkinv { cmd: self }
     }
+    pub fn into_command(self) -> Command<()> {
+        Command::<()> {
+            data: self.data,
+            t: PhantomData::<()>,
+        }
+    }
 }
 
 pub enum FormatV {
@@ -38,14 +63,14 @@ pub enum FormatV {
 }
 
 pub struct Format {
-    cmd: Command<DigitalAudioInterface>,
+    cmd: DigitalAudioInterface,
 }
 
 impl Format {
-    impl_bits!(Command<DigitalAudioInterface>, 2, 0);
+    impl_bits!(DigitalAudioInterface, 2, 0);
 
     #[must_use]
-    pub fn variant(self, value: FormatV) -> Command<DigitalAudioInterface> {
+    pub fn variant(self, value: FormatV) -> DigitalAudioInterface {
         match value {
             FormatV::Dsp => self.bits(0b11),
             FormatV::I2s => self.bits(0b10),
@@ -53,21 +78,21 @@ impl Format {
             FormatV::RigthJustified => self.bits(0b00),
         }
     }
-    
+
     #[must_use]
-    pub fn dsp(self) -> Command<DigitalAudioInterface> {
+    pub fn dsp(self) -> DigitalAudioInterface {
         self.bits(0b11)
     }
     #[must_use]
-    pub fn i2s(self) -> Command<DigitalAudioInterface> {
+    pub fn i2s(self) -> DigitalAudioInterface {
         self.bits(0b10)
     }
     #[must_use]
-    pub fn left_justified(self) -> Command<DigitalAudioInterface> {
+    pub fn left_justified(self) -> DigitalAudioInterface {
         self.bits(0b01)
     }
     #[must_use]
-    pub fn right_justified(self) -> Command<DigitalAudioInterface> {
+    pub fn right_justified(self) -> DigitalAudioInterface {
         self.bits(0b00)
     }
 }
@@ -80,14 +105,14 @@ pub enum IwlV {
 }
 
 pub struct Iwl {
-    cmd: Command<DigitalAudioInterface>,
+    cmd: DigitalAudioInterface,
 }
 
 impl Iwl {
-    impl_bits!(Command<DigitalAudioInterface>, 2, 2);
+    impl_bits!(DigitalAudioInterface, 2, 2);
 
     #[must_use]
-    pub fn variant(self, value: IwlV) -> Command<DigitalAudioInterface> {
+    pub fn variant(self, value: IwlV) -> DigitalAudioInterface {
         match value {
             IwlV::Iwl32bits => self.bits(0b11),
             IwlV::Iwl24bits => self.bits(0b10),
@@ -96,34 +121,34 @@ impl Iwl {
         }
     }
     #[must_use]
-    pub fn iwl_32_bits(self) -> Command<DigitalAudioInterface> {
+    pub fn iwl_32_bits(self) -> DigitalAudioInterface {
         self.bits(0b11)
     }
     #[must_use]
-    pub fn iwl_24_bits(self) -> Command<DigitalAudioInterface> {
+    pub fn iwl_24_bits(self) -> DigitalAudioInterface {
         self.bits(0b10)
     }
     #[must_use]
-    pub fn iwl_20_bits(self) -> Command<DigitalAudioInterface> {
+    pub fn iwl_20_bits(self) -> DigitalAudioInterface {
         self.bits(0b01)
     }
     #[must_use]
-    pub fn iwl_16_bits(self) -> Command<DigitalAudioInterface> {
+    pub fn iwl_16_bits(self) -> DigitalAudioInterface {
         self.bits(0b00)
     }
 }
 
 pub struct Lrp {
-    cmd: Command<DigitalAudioInterface>,
+    cmd: DigitalAudioInterface,
 }
 
 impl Lrp {
-    impl_bit!(Command<DigitalAudioInterface>, 4);
-    impl_clear_bit!(Command<DigitalAudioInterface>, 4);
-    impl_set_bit!(Command<DigitalAudioInterface>, 4);
+    impl_bit!(DigitalAudioInterface, 4);
+    impl_clear_bit!(DigitalAudioInterface, 4);
+    impl_set_bit!(DigitalAudioInterface, 4);
 }
 
-impl_toggle_writer!(Lrswap, Command<DigitalAudioInterface>, 5);
+impl_toggle_writer!(Lrswap, DigitalAudioInterface, 5);
 
 pub enum MsV {
     Master = 0b1,
@@ -131,18 +156,18 @@ pub enum MsV {
 }
 
 pub struct Ms {
-    cmd: Command<DigitalAudioInterface>,
+    cmd: DigitalAudioInterface,
 }
 
 impl Ms {
-    impl_bit!(Command<DigitalAudioInterface>, 6);
-    impl_clear_bit!(Command<DigitalAudioInterface>, 6);
-    impl_set_bit!(Command<DigitalAudioInterface>, 6);
-    impl_clear_bit!(slave, Command<DigitalAudioInterface>, 6);
-    impl_set_bit!(master, Command<DigitalAudioInterface>, 6);
+    impl_bit!(DigitalAudioInterface, 6);
+    impl_clear_bit!(DigitalAudioInterface, 6);
+    impl_set_bit!(DigitalAudioInterface, 6);
+    impl_clear_bit!(slave, DigitalAudioInterface, 6);
+    impl_set_bit!(master, DigitalAudioInterface, 6);
 
     #[must_use]
-    pub fn variant(self, value: MsV) -> Command<DigitalAudioInterface> {
+    pub fn variant(self, value: MsV) -> DigitalAudioInterface {
         match value {
             MsV::Slave => self.slave(),
             MsV::Master => self.master(),
@@ -150,4 +175,4 @@ impl Ms {
     }
 }
 
-impl_toggle_writer!(Bclkinv, Command<DigitalAudioInterface>, 7);
+impl_toggle_writer!(Bclkinv, DigitalAudioInterface, 7);
