@@ -19,18 +19,18 @@ impl<CHANNEL> Clone for HeadphoneOut<CHANNEL> {
     }
 }
 
-///Marker indicating left line in concern
+///Marker indicating left headphone output concern
 pub type LeftHeadphoneOut = HeadphoneOut<Left>;
 
-///Marker indicating left line in concern
+///Marker indicating left headphone output concern
 pub type RightHeadphoneOut = HeadphoneOut<Right>;
 
-/// Instanciate a builder for left line in configuration.
+/// Instanciate a builder for left headphone output configuration.
 pub fn left_headphone_out() -> LeftHeadphoneOut {
     LeftHeadphoneOut::new()
 }
 
-/// Instanciate a builder for right line in configuration.
+/// Instanciate a builder for right headphone output configuration.
 pub fn right_headphone_out() -> RightHeadphoneOut {
     RightHeadphoneOut::new()
 }
@@ -72,7 +72,7 @@ impl<CHANNEL> HeadphoneOut<CHANNEL> {
 
 }
 
-///Writer of LHPVOL or RHPVOL fields. Control line input volume.
+///Writer of LHPVOL or RHPVOL fields. Control headphone output volume.
 pub struct Hpvol<CHANNEL> {
     cmd: HeadphoneOut<CHANNEL>,
 }
