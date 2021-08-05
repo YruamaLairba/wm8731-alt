@@ -4,10 +4,19 @@
 use crate::{Command, Left, Right};
 use core::marker::PhantomData;
 
-///Marker indicating headphone ouputs concern
+///Headphone out configuration builder
+#[derive(Debug, Eq, PartialEq)]
 pub struct HeadphoneOut<CHANNEL> {
     data: u16,
     channel: PhantomData<CHANNEL>,
+}
+
+impl<CHANNEL> Copy for HeadphoneOut<CHANNEL> {}
+
+impl<CHANNEL> Clone for HeadphoneOut<CHANNEL> {
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 ///Marker indicating left line in concern
