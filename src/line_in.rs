@@ -4,36 +4,59 @@
 use crate::{Command, Left, Right};
 use core::marker::PhantomData;
 
-///Marker indicating line in concern
+/// Line in configuration builder.
+#[derive(Debug, Eq, PartialEq)]
 pub struct LineIn<CHANNEL> {
+    data: u16,
     channel: PhantomData<CHANNEL>,
 }
 
-///Marker indicating left line in concern
+impl<CHANNEL> Copy for LineIn<CHANNEL> {}
+
+impl<CHANNEL> Clone for LineIn<CHANNEL> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+/// Left line in configuration builder.
 pub type LeftLineIn = LineIn<Left>;
 
-///Marker indicating left line in concern
+/// Right line in configuration builder.
 pub type RightLineIn = LineIn<Right>;
 
-impl Command<LeftLineIn> {
+/// Instanciate a builder for left line in configuration.
+pub fn left_line_in() -> LeftLineIn {
+    LeftLineIn::new()
+}
+ 
+/// Instanciate a builder for right line in configuration.
+pub fn right_line_in() -> RightLineIn {
+    RightLineIn::new()
+}
+
+
+impl LeftLineIn {
     pub fn new() -> Self {
         Self {
             data: 0b0_1001_0111,
-            t: PhantomData::<LeftLineIn>,
+            channel: PhantomData::<Left>,
         }
     }
 }
 
-impl Command<RightLineIn> {
+
+
+impl RightLineIn {
     pub fn new() -> Self {
         Self {
             data: 0x1 << 9 | 0b0_1001_0111,
-            t: PhantomData::<RightLineIn>,
+            channel: PhantomData::<Right>,
         }
     }
 }
 
-impl<CHANNEL> Command<LineIn<CHANNEL>> {
+impl<CHANNEL> LineIn<CHANNEL> {
     pub fn invol(self) -> Invol<CHANNEL> {
         Invol { cmd: self }
     }
@@ -43,26 +66,32 @@ impl<CHANNEL> Command<LineIn<CHANNEL>> {
     pub fn inboth(self) -> Inboth<CHANNEL> {
         Inboth { cmd: self }
     }
+    pub fn into_command(self) -> Command<()> {
+        Command::<()> {
+            data: self.data,
+            t: PhantomData::<()>,
+        }
+    }
 }
 
 ///Writer of LINVOL or RINVOL fields. Control line input volume.
 pub struct Invol<CHANNEL> {
-    cmd: Command<LineIn<CHANNEL>>,
+    cmd: LineIn<CHANNEL>,
 }
 
 impl<CHANNEL> Invol<CHANNEL> {
-    impl_bits!(Command<LineIn<CHANNEL>>, 5, 0);
+    impl_bits!(LineIn<CHANNEL>, 5, 0);
 }
 
-impl_toggle_writer!(Inmute<CHANNEL>, Command<LineIn<CHANNEL>>, 7);
-impl_toggle_writer!(Inboth<CHANNEL>, Command<LineIn<CHANNEL>>, 8);
+impl_toggle_writer!(Inmute<CHANNEL>, LineIn<CHANNEL>, 7);
+impl_toggle_writer!(Inboth<CHANNEL>, LineIn<CHANNEL>, 8);
 
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn left_line_in_new() {
-        let cmd = Command::<LeftLineIn>::new();
+        let cmd = left_line_in().into_command();
         let expected = 0b0000_0000_1001_0111;
         assert!(
             cmd.data == expected,
@@ -73,7 +102,7 @@ mod tests {
     }
     #[test]
     fn right_line_in_new() {
-        let cmd = Command::<RightLineIn>::new();
+        let cmd = right_line_in();
         let expected = 0b0000_0010_1001_0111;
         assert!(
             cmd.data == expected,
@@ -84,7 +113,7 @@ mod tests {
     }
     #[test]
     fn set_bits_dont_overwrite() {
-        let cmd = Command::<RightLineIn>::new();
+        let cmd = right_line_in();
         //this should trigger a warning
         //cmd.invol().bits(0b1111_1111);
         let cmd = cmd.invol().bits(0b1111_1111);

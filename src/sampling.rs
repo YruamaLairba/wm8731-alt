@@ -76,6 +76,7 @@
 //! let cmd =
 //! sampling_command_builder().usb_normal().usb().bosr().set_bit().sr().sr_0b0000();
 //! # }
+//! ```
 //!
 //!
 #![allow(clippy::new_without_default)]
