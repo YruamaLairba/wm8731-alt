@@ -14,14 +14,42 @@ pub mod power_down;
 pub mod sampling;
 
 pub mod reset {
-//! Reset the device
+    //! Reset the device
     #![allow(clippy::new_without_default)]
     use crate::Command;
     use core::marker::PhantomData;
-    /// Marker indicating a reset command
-    pub struct Reset;
+    /// Reset command builder.
+    #[derive(Debug, Eq, PartialEq)]
+    pub struct Reset {
+        data: u16,
+    }
 
-    impl_command_new!(Reset, 0b1111, 0);
+    impl Copy for Reset {}
+
+    impl Clone for Reset {
+        fn clone(&self) -> Self {
+            *self
+        }
+    }
+
+    /// Instanciate a reset command builder.
+    pub fn reset() -> Reset {
+        Reset::new()
+    }
+
+    impl Reset {
+        pub fn new() -> Self {
+            Self {
+                data: 0b110 << 9 | 0b1001_1111,
+            }
+        }
+        pub fn into_command(self) -> Command<()> {
+            Command::<()> {
+                data: self.data,
+                t: PhantomData::<()>,
+            }
+        }
+    }
 }
 
 ///Marker indicating left channel concern
