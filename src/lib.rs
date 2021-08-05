@@ -38,7 +38,7 @@ pub mod reset {
     }
 
     impl Reset {
-        pub fn new() -> Self {
+        fn new() -> Self {
             Self {
                 data: 0b110 << 9 | 0b1001_1111,
             }

@@ -24,7 +24,7 @@ pub fn analogue_audio_path() -> AnalogueAudioPath {
 }
 
 impl AnalogueAudioPath {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             data: 0b100 << 9 | 0b1010,
         }

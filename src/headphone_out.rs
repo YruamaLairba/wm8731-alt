@@ -36,7 +36,7 @@ pub fn right_headphone_out() -> RightHeadphoneOut {
 }
 
 impl LeftHeadphoneOut {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             data: 0x2 << 9 | 0b0_0111_1001,
             channel: PhantomData::<Left>,
@@ -45,7 +45,7 @@ impl LeftHeadphoneOut {
 }
 
 impl RightHeadphoneOut {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             data: 0x3 << 9 | 0b0_0111_1001,
             channel: PhantomData::<Right>,

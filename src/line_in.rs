@@ -37,7 +37,7 @@ pub fn right_line_in() -> RightLineIn {
 
 
 impl LeftLineIn {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             data: 0b0_1001_0111,
             channel: PhantomData::<Left>,
@@ -48,7 +48,7 @@ impl LeftLineIn {
 
 
 impl RightLineIn {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             data: 0x1 << 9 | 0b0_1001_0111,
             channel: PhantomData::<Right>,

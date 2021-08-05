@@ -116,19 +116,6 @@ macro_rules! impl_toggle_writer {
     };
 }
 
-macro_rules! impl_command_new {
-    ($type:ty, $reg:literal, $default:literal) => {
-        impl Command<$type> {
-            pub fn new() -> Self {
-                Self {
-                    data: $reg << 9 | $default,
-                    t: PhantomData::<$type>,
-                }
-            }
-        }
-    };
-}
-
 #[cfg(test)]
 mod tests {
     #[derive(Debug, Eq, PartialEq, Clone, Copy)]

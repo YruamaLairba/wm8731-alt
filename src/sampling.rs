@@ -386,7 +386,7 @@ impl<SR> SampleRate<(Mclk12M, SR)> {
 
 impl Sampling<(Unset, Unset, Unset)> {
     #[allow(clippy::identity_op)]
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             data: 0b1000 << 9 | 0b0000_0000,
             t: PhantomData::<(Unset, Unset, Unset)>,

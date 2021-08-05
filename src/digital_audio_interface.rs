@@ -24,7 +24,7 @@ pub fn digital_audio_interface() -> DigitalAudioInterface {
 }
 
 impl DigitalAudioInterface {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             data: 0b111 << 9 | 0b1010,
         }

@@ -25,7 +25,7 @@ pub fn digital_audio_path() -> DigitalAudioPath {
 
 
 impl DigitalAudioPath {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             data: 0b101 << 9 | 0b1000,
         }
