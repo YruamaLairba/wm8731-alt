@@ -4,22 +4,47 @@
 use crate::Command;
 use core::marker::PhantomData;
 
-///Marker idicating an "Active Control" command
-pub struct ActiveControl;
+/// Power down configuration builder.
+#[derive(Debug, Eq, PartialEq)]
+pub struct ActiveControl {
+    data: u16,
+}
 
-impl_command_new!(ActiveControl, 0b1001, 0b0);
+impl Copy for ActiveControl {}
 
-impl Command<ActiveControl> {
+impl Clone for ActiveControl {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+/// Instanciate a builder for power down configuration.
+pub fn active_control() -> ActiveControl {
+    ActiveControl::new()
+}
+
+impl ActiveControl {
+    pub fn new() -> Self {
+        Self {
+            data: 0b110 << 9 | 0b1001_1111,
+        }
+    }
     ///Activate digital audio interface
     #[must_use]
-    pub fn active(mut self) -> Command<ActiveControl> {
+    pub fn active(mut self) -> ActiveControl {
         self.data |= 0b1;
         self
     }
-    ///Dectivate digital audio interface
+    ///Deactivate digital audio interface
     #[must_use]
-    pub fn inactive(mut self) -> Command<ActiveControl> {
+    pub fn inactive(mut self) -> ActiveControl {
         self.data &= !(0b1);
         self
+    }
+    pub fn into_command(self) -> Command<()> {
+        Command::<()> {
+            data: self.data,
+            t: PhantomData::<()>,
+        }
     }
 }
