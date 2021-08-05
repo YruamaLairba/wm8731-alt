@@ -4,12 +4,32 @@
 use crate::Command;
 use core::marker::PhantomData;
 
-///Marker indicating Digital Audio Path concern
-pub struct DigitalAudioPath;
+/// Digital audio path configuration builder.
+#[derive(Debug, Eq, PartialEq)]
+pub struct DigitalAudioPath {
+    data: u16,
+}
 
-impl_command_new!(DigitalAudioPath, 0b101, 0b1000);
+impl Copy for DigitalAudioPath {}
 
-impl Command<DigitalAudioPath> {
+impl Clone for DigitalAudioPath {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+/// Instanciate a builder for Digital audio path configuration.
+pub fn digital_audio_path() -> DigitalAudioPath {
+    DigitalAudioPath::new()
+}
+
+
+impl DigitalAudioPath {
+    pub fn new() -> Self {
+        Self {
+            data: 0b101 << 9 | 0b1000,
+        }
+    }
     pub fn adchpd(self) -> Adchpd {
         Adchpd { cmd: self }
     }
@@ -22,10 +42,16 @@ impl Command<DigitalAudioPath> {
     pub fn hpor(self) -> Hpor {
         Hpor { cmd: self }
     }
+    pub fn into_command(self) -> Command<()> {
+        Command::<()> {
+            data: self.data,
+            t: PhantomData::<()>,
+        }
+    }
 }
 
-impl_toggle_writer!(Adchpd, Command<DigitalAudioPath>, 0);
-impl_toggle_writer!(Dacmu, Command<DigitalAudioPath>, 3);
+impl_toggle_writer!(Adchpd, DigitalAudioPath, 0);
+impl_toggle_writer!(Dacmu, DigitalAudioPath, 3);
 
 pub enum DeempV {
     Disable = 0b00,
@@ -35,14 +61,14 @@ pub enum DeempV {
 }
 
 pub struct Deemp {
-    cmd: Command<DigitalAudioPath>,
+    cmd: DigitalAudioPath,
 }
 
 impl Deemp {
-    impl_bits!(Command<DigitalAudioPath>, 2, 1);
+    impl_bits!(DigitalAudioPath, 2, 1);
 
     #[must_use]
-    pub fn variant(self, value: DeempV) -> Command<DigitalAudioPath> {
+    pub fn variant(self, value: DeempV) -> DigitalAudioPath {
         match value {
             DeempV::Disable => self.bits(0b00),
             DeempV::F32k => self.bits(0b01),
@@ -50,16 +76,16 @@ impl Deemp {
             DeempV::F48k => self.bits(0b11),
         }
     }
-    pub fn disable(self) -> Command<DigitalAudioPath> {
+    pub fn disable(self) -> DigitalAudioPath {
         self.bits(0b00)
     }
-    pub fn f32k(self) -> Command<DigitalAudioPath> {
+    pub fn f32k(self) -> DigitalAudioPath {
         self.bits(0b01)
     }
-    pub fn f44k1(self) -> Command<DigitalAudioPath> {
+    pub fn f44k1(self) -> DigitalAudioPath {
         self.bits(0b10)
     }
-    pub fn f48k(self) -> Command<DigitalAudioPath> {
+    pub fn f48k(self) -> DigitalAudioPath {
         self.bits(0b11)
     }
 }
@@ -70,18 +96,18 @@ pub enum HporV {
 }
 
 pub struct Hpor {
-    cmd: Command<DigitalAudioPath>,
+    cmd: DigitalAudioPath,
 }
 
 impl Hpor {
-    impl_bit!(Command<DigitalAudioPath>, 4);
-    impl_clear_bit!(Command<DigitalAudioPath>, 4);
-    impl_set_bit!(Command<DigitalAudioPath>, 4);
-    impl_clear_bit!(clear_offset, Command<DigitalAudioPath>, 4);
-    impl_set_bit!(store_offset, Command<DigitalAudioPath>, 4);
+    impl_bit!(DigitalAudioPath, 4);
+    impl_clear_bit!(DigitalAudioPath, 4);
+    impl_set_bit!(DigitalAudioPath, 4);
+    impl_clear_bit!(clear_offset, DigitalAudioPath, 4);
+    impl_set_bit!(store_offset, DigitalAudioPath, 4);
 
     #[must_use]
-    pub fn variant(self, value: HporV) -> Command<DigitalAudioPath> {
+    pub fn variant(self, value: HporV) -> DigitalAudioPath {
         match value {
             HporV::ClearOffset => self.clear_offset(),
             HporV::StoreOffset => self.store_offset(),
