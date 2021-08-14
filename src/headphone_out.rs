@@ -4,6 +4,10 @@
 use crate::{Command, Left, Right};
 use core::marker::PhantomData;
 
+#[path = "hp_vol_db.rs"]
+mod hp_vol_db;
+pub use hp_vol_db::*;
+
 ///Headphone out configuration builder
 #[derive(Debug, Eq, PartialEq)]
 pub struct HeadphoneOut<CHANNEL> {
@@ -78,6 +82,12 @@ pub struct Hpvol<CHANNEL> {
 
 impl<CHANNEL> Hpvol<CHANNEL> {
     impl_bits!(HeadphoneOut<CHANNEL>, 7, 0);
+    ///Set volume from a dB representation.
+    pub fn db(mut self, volume: HpVoldB) -> HeadphoneOut<CHANNEL> {
+        let mask = !((!0) << 7);
+        self.cmd.data = self.cmd.data & !mask | (volume.into_raw() as u16);
+        self.cmd
+    }
 }
 
 impl_toggle_writer!(Zcen<CHANNEL>, HeadphoneOut<CHANNEL>, 7);
