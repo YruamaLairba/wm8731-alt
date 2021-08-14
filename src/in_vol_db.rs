@@ -61,14 +61,14 @@ impl InVoldB {
 
     ///Increase the value by one step. Saturated to `InVoldB::MAX`.
     pub fn increase(&mut self) {
-        if self.inner <= InVoldB::MAX.inner {
+        if self.inner < InVoldB::MAX.inner {
             self.inner += 1;
         }
     }
 
     ///Decrease the value by one step. Saturated to `InVoldB::MIN`.
     pub fn decrease(&mut self) {
-        if self.inner >= InVoldB::MIN.inner {
+        if self.inner > InVoldB::MIN.inner {
             self.inner -= 1;
         }
     }
@@ -206,5 +206,24 @@ mod tests {
         let db = InVoldB::from_scaled(0, 127, 128).unwrap_err();
         let expected = InVoldBScaleError::OutOfRange;
         assert!(db == expected, "Got {:?},expected {:?}", db, expected);
+    }
+    #[test]
+    fn increase_decrease_saturation_test() {
+        let mut test = InVoldB::MAX;
+        test.increase();
+        assert!(
+            test == InVoldB::MAX,
+            "Got {}, expected {}",
+            test,
+            InVoldB::MAX
+        );
+        let mut test = InVoldB::MIN;
+        test.decrease();
+        assert!(
+            test == InVoldB::MIN,
+            "Got {}, expected {}",
+            test,
+            InVoldB::MIN
+        );
     }
 }
