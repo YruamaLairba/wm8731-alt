@@ -4,6 +4,10 @@
 use crate::Command;
 use core::marker::PhantomData;
 
+#[path = "side_att_db.rs"]
+mod side_att_db;
+pub use side_att_db::*;
+
 /// Analogue audio path configuration builder.
 #[derive(Debug, Eq, PartialEq)]
 pub struct AnalogueAudioPath {
@@ -113,10 +117,17 @@ impl Dacsel {
     }
 }
 
+///Control attenuation of the mic input when directly connected to ouput.
 pub struct Sideatt {
     cmd: AnalogueAudioPath,
 }
 
 impl Sideatt {
     impl_bits!(AnalogueAudioPath, 2, 6);
+    ///Set attenuation from a dB representation.
+    pub fn db(mut self, volume: SideAttdB) -> AnalogueAudioPath {
+        let mask = !((!0) << 2) << 6;
+        self.cmd.data = self.cmd.data & !mask | (volume.into_raw() as u16);
+        self.cmd
+    }
 }
