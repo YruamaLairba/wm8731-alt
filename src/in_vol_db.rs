@@ -31,6 +31,10 @@ impl InVoldB {
             Self { inner: raw }
         }
     }
+    ///Return the raw underlaying representation
+    pub const fn into_raw(&self) -> u8 {
+        self.inner
+    }
     /// Scale a value into a InVoldB. This function output an error when the input range is null or
     /// when the input is outside the range
     pub fn from_scaled(

@@ -82,6 +82,12 @@ pub struct Invol<CHANNEL> {
 
 impl<CHANNEL> Invol<CHANNEL> {
     impl_bits!(LineIn<CHANNEL>, 5, 0);
+    ///Set volume from a dB representation.
+    pub fn db(mut self, volume: InVoldB) -> LineIn<CHANNEL> {
+        let mask = !((!0) << 5);
+        self.cmd.data = self.cmd.data & !mask | (volume.into_raw() as u16);
+        self.cmd
+    }
 }
 
 impl_toggle_writer!(Inmute<CHANNEL>, LineIn<CHANNEL>, 7);
