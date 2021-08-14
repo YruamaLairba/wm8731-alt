@@ -69,7 +69,6 @@ impl<CHANNEL> HeadphoneOut<CHANNEL> {
             t: PhantomData::<()>,
         }
     }
-
 }
 
 ///Writer of LHPVOL or RHPVOL fields. Control headphone output volume.

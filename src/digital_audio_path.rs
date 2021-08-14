@@ -23,7 +23,6 @@ pub fn digital_audio_path() -> DigitalAudioPath {
     DigitalAudioPath::new()
 }
 
-
 impl DigitalAudioPath {
     fn new() -> Self {
         Self {
