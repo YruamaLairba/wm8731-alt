@@ -4,6 +4,10 @@
 use crate::{Command, Left, Right};
 use core::marker::PhantomData;
 
+#[path = "in_vol_db.rs"]
+mod in_vol_db;
+pub use in_vol_db::*;
+
 /// Line in configuration builder.
 #[derive(Debug, Eq, PartialEq)]
 pub struct LineIn<CHANNEL> {
@@ -29,12 +33,11 @@ pub type RightLineIn = LineIn<Right>;
 pub fn left_line_in() -> LeftLineIn {
     LeftLineIn::new()
 }
- 
+
 /// Instanciate a builder for right line in configuration.
 pub fn right_line_in() -> RightLineIn {
     RightLineIn::new()
 }
-
 
 impl LeftLineIn {
     fn new() -> Self {
@@ -44,8 +47,6 @@ impl LeftLineIn {
         }
     }
 }
-
-
 
 impl RightLineIn {
     fn new() -> Self {
