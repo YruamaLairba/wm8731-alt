@@ -75,30 +75,43 @@ impl<T> Clone for Command<T> {
     }
 }
 
-impl<T> From<Command<T>> for [u8; 2] {
-    ///Allow to convert command to an array directly usable with SPI and I2C abstraction from embedded-hal.
-    fn from(cmd: Command<T>) -> [u8; 2] {
-        cmd.data.to_be_bytes()
+impl<T> From<Command<T>> for Frame {
+    ///Allow to convert frame to an array directly usable with SPI and I2C abstraction from embedded-hal.
+    fn from(cmd: Command<T>) -> Frame {
+        Frame { data: cmd.data }
     }
 }
 
-impl<T> From<Command<T>> for [u16; 1] {
-    ///Allow to convert command to an array directly usable with 16 bit word SPI abstraction from embedded-hal.
-    fn from(cmd: Command<T>) -> [u16; 1] {
-        [cmd.data]
+///Represent a frame sended through I2C or SPI interface.
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub struct Frame {
+    data: u16,
+}
+
+impl From<Frame> for [u8; 2] {
+    ///Allow to convert frame to an array directly usable with SPI and I2C abstraction from embedded-hal.
+    fn from(frame: Frame) -> [u8; 2] {
+        frame.data.to_be_bytes()
     }
 }
 
-impl<T> From<Command<T>> for u16 {
-    ///Allow to convert command in u16.
-    fn from(cmd: Command<T>) -> u16 {
-        cmd.data
+impl From<Frame> for [u16; 1] {
+    ///Allow to convert frame to an array directly usable with 16 bit word SPI abstraction from embedded-hal.
+    fn from(frame: Frame) -> [u16; 1] {
+        [frame.data]
+    }
+}
+
+impl From<Frame> for u16 {
+    ///Allow to convert frame in u16.
+    fn from(frame: Frame) -> u16 {
+        frame.data
     }
 }
 
 /// Serial Interface abstraction for the wm8731 generic driver.
-pub trait WriteCommand {
-    fn send<T>(&mut self, cmd: Command<T>);
+pub trait WriteFrame {
+    fn send(&mut self, frame: Frame);
 }
 
 /// Generic blocking I2C communication implementation using embedded-hal.
@@ -119,12 +132,12 @@ where
     }
 }
 
-impl<I2C> WriteCommand for I2CInterface<I2C>
+impl<I2C> WriteFrame for I2CInterface<I2C>
 where
     I2C: i2c::Write,
 {
-    fn send<T>(&mut self, cmd: Command<T>) {
-        let frame: [u8; 2] = cmd.into();
+    fn send(&mut self, frame: Frame) {
+        let frame: [u8; 2] = frame.into();
         let _ = self.i2c.write(self.address, &frame);
     }
 }
@@ -149,26 +162,26 @@ impl<SPI, CS, W> SPIInterface<SPI, CS, W> {
     }
 }
 
-impl<SPI, CS> WriteCommand for SPIInterface<SPI, CS, u8>
+impl<SPI, CS> WriteFrame for SPIInterface<SPI, CS, u8>
 where
     SPI: spi::Write<u8>,
     CS: OutputPin,
 {
-    fn send<T>(&mut self, cmd: Command<T>) {
-        let frame: [u8; 2] = cmd.into();
+    fn send(&mut self, frame: Frame) {
+        let frame: [u8; 2] = frame.into();
         let _ = self.cs.set_low();
         let _ = self.spi.write(&frame);
         let _ = self.cs.set_high();
     }
 }
 
-impl<SPI, CS> WriteCommand for SPIInterface<SPI, CS, u16>
+impl<SPI, CS> WriteFrame for SPIInterface<SPI, CS, u16>
 where
     SPI: spi::Write<u16>,
     CS: OutputPin,
 {
-    fn send<T>(&mut self, cmd: Command<T>) {
-        let frame: [u16; 1] = cmd.into();
+    fn send(&mut self, frame: Frame) {
+        let frame: [u16; 1] = frame.into();
         let _ = self.cs.set_low();
         let _ = self.spi.write(&frame);
         let _ = self.cs.set_high();
@@ -181,23 +194,24 @@ pub struct Wm8731<I> {
 
 impl<I> Wm8731<I>
 where
-    I: WriteCommand,
+    I: WriteFrame,
 {
     ///Reset the codec and instantiate a driver.
-    pub fn new(mut interface: I) -> Self {
+    pub fn new(interface: I) -> Self {
         use crate::reset::*;
-        interface.send(reset().into_command());
-        Self { interface }
+        let mut codec = Self { interface };
+        codec.send(reset().into_command());
+        codec
     }
     pub fn send<T>(&mut self, cmd: Command<T>) {
-        self.interface.send(cmd);
+        self.interface.send(cmd.into());
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use embedded_hal::blocking::{i2c, spi};
+    use embedded_hal::blocking::spi;
     use embedded_hal::digital::v2::OutputPin;
 
     struct FakeSpi;
@@ -227,9 +241,14 @@ mod tests {
     }
 
     fn _should_compile() {
+        let spi_if: SPIInterface<_, _, u8> = SPIInterface::new(FakeSpi, FakePin);
+        let _wm8731 = Wm8731::new(spi_if);
+    }
+    #[cfg(any())]
+    fn _should_not_compile() {
         use crate::reset::*;
         let mut spi_if: SPIInterface<_, _, u8> = SPIInterface::new(FakeSpi, FakePin);
+        //forbidden to encourage using the driver instead serial interface
         spi_if.send(reset().into_command());
-        let _wm8731 = Wm8731::new(spi_if);
     }
 }
