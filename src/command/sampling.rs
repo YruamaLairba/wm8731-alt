@@ -17,7 +17,7 @@
 //!
 //!  ## Example
 //! ```
-//! # use wm8731_alt::sampling::*;
+//! # use wm8731_alt::command::sampling::*;
 //! //instanciate the builder
 //! let cmd = sampling_with_mclk(Mclk12M288);
 //! //setup the sampling rate
@@ -36,7 +36,7 @@
 //!
 //! ## Example
 //! ```
-//! # use wm8731_alt::sampling::*;
+//! # use wm8731_alt::command::sampling::*;
 //! //instantiate the builder
 //! let cmd = sampling();
 //! //normal mode operation
@@ -84,6 +84,36 @@
 use crate::Command;
 use core::marker::PhantomData;
 
+pub mod state_marker {
+    //! Markers to track state of the sampling builder.
+    //!
+    //! They are used with the sampling builder to provide coherent API and compile time safety check.
+
+    /// Marker trait to say a marker correspond to something set.
+    pub trait IsSet {}
+
+    /// Marker used to indicate Normal mode.
+    pub struct Normal;
+    impl IsSet for Normal {}
+    /// Marker used to indicate USB mode.
+    pub struct Usb;
+    impl IsSet for Usb {}
+    /// Marker used to indicate BOSR bit is set.
+    pub struct BosrIsSet;
+    impl IsSet for BosrIsSet {}
+    /// Marker used to indicate BOSR bit is clear.
+    pub struct BosrIsClear;
+    impl IsSet for BosrIsClear {}
+    /// Marker to indicate Sr is exeplictly set.
+    pub struct SrIsSet;
+    impl IsSet for SrIsSet {}
+
+    /// Marker used to indicate something is not yet defined but required to be.
+    pub struct Unset;
+}
+
+use state_marker::*;
+
 /// Builder for sampling command.
 #[derive(Debug, Eq, PartialEq)]
 pub struct Sampling<T> {
@@ -98,31 +128,6 @@ impl<T> Clone for Sampling<T> {
         *self
     }
 }
-
-/// Marker trait to say a marker correspnd to something set.
-pub trait IsSet {}
-
-/// Marker used to indicate Normal mode.
-pub struct Normal;
-impl IsSet for Normal {}
-/// Marker used to indicate USB mode.
-pub struct Usb;
-impl IsSet for Usb {}
-/// Marker used to indicate BOSR bit is set.
-pub struct BosrIsSet;
-impl IsSet for BosrIsSet {}
-/// Marker used to indicate BOSR bit is clear.
-pub struct BosrIsClear;
-impl IsSet for BosrIsClear {}
-/// Marker to indicate Sr is exeplictly set.
-pub struct SrIsSet;
-impl IsSet for SrIsSet {}
-
-/// Marker used to indicate something is not yet defined but required to be.
-pub struct Unset;
-
-/// Marker trait to say a marker correspond to a master clock value.
-pub trait Mclk {}
 
 ///Marker indicating use of 12.288Mhz internal master clock (normal mode).
 pub struct Mclk12M288;
@@ -139,11 +144,8 @@ impl Mclk for Mclk16M9344 {}
 ///Marker indicating use of 12Mhz internal master clock (USB mode).
 pub struct Mclk12M;
 impl Mclk for Mclk12M {}
-
-/// Instanciate a command builder for sampling configuration.
-pub fn sampling() -> Sampling<(Unset, Unset, Unset)> {
-    Sampling::<(Unset, Unset, Unset)>::new()
-}
+/// Marker trait to say a marker correspond to a master clock value.
+pub trait Mclk {}
 
 /// Instanciate a command builder to set sampling configuration for a particular master clock.
 pub fn sampling_with_mclk<MCLK>(_: MCLK) -> Sampling<(MCLK, Unset)>
@@ -384,12 +386,17 @@ impl<SR> SampleRate<(Mclk12M, SR)> {
     }
 }
 
-impl Sampling<(Unset, Unset, Unset)> {
+/// Instanciate a command builder for sampling configuration.
+pub fn sampling() -> Sampling<(Normal, BosrIsSet, SrIsSet)> {
+    Sampling::<(Normal, BosrIsSet, SrIsSet)>::new()
+}
+
+impl Sampling<(Normal, BosrIsSet, SrIsSet)> {
     #[allow(clippy::identity_op)]
     fn new() -> Self {
         Self {
             data: 0b1000 << 9 | 0b0000_0000,
-            t: PhantomData::<(Unset, Unset, Unset)>,
+            t: PhantomData::<(Normal, BosrIsSet, SrIsSet)>,
         }
     }
 }

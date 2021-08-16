@@ -8,7 +8,6 @@ mod macros;
 pub mod command;
 pub mod interface;
 
-
 ///The wm8731 driver
 pub struct Wm8731<I> {
     interface: I,
