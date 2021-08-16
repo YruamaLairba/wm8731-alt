@@ -11,6 +11,16 @@ pub mod line_in;
 pub mod power_down;
 pub mod sampling;
 
+pub use active_control::active_control;
+pub use analogue_audio_path::analogue_audio_path;
+pub use digital_audio_interface::digital_audio_interface;
+pub use digital_audio_path::digital_audio_path;
+pub use headphone_out::{left_headphone_out, right_headphone_out};
+pub use line_in::{left_line_in, right_line_in};
+pub use power_down::power_down;
+pub use reset::reset;
+pub use sampling::sampling;
+
 pub mod reset {
     //! Reset the device
     #![allow(clippy::new_without_default)]
@@ -62,5 +72,13 @@ impl<T> Copy for Command<T> {}
 impl<T> Clone for Command<T> {
     fn clone(&self) -> Self {
         *self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn _should_compile() {
+        left_headphone_out().hpvol().bits(0b111111).into_command();
     }
 }
