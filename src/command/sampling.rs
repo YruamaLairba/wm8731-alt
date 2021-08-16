@@ -18,7 +18,7 @@
 //!  ## Example
 //! ```
 //! # use wm8731_alt::command::sampling::*;
-//! //instanciate the builder
+//! //instantiate the builder
 //! let cmd = sampling_with_mclk(Mclk12M288);
 //! //setup the sampling rate
 //! let cmd = cmd.sample_rate().adc48k_dac48k();
@@ -98,7 +98,7 @@ pub mod state_marker {
     pub struct BosrIsSet;
     /// Marker used to indicate BOSR bit is clear.
     pub struct BosrIsClear;
-    /// Marker to indicate Sr is exeplictly set.
+    /// Marker to indicate Sr is explicitly set.
     pub struct SrIsSet;
 
     /// Marker used to indicate something is not yet defined or invalid.
@@ -150,7 +150,7 @@ impl Mclk for Mclk12M {}
 /// Marker trait to say a marker correspond to a master clock value.
 pub trait Mclk {}
 
-/// Instanciate a command builder to set sampling configuration for a particular master clock.
+/// Instantiate a command builder to set sampling configuration for a particular master clock.
 pub fn sampling_with_mclk<MCLK>(_: MCLK) -> Sampling<(MCLK, Unset)>
 where
     MCLK: Mclk,
@@ -169,7 +169,7 @@ where
         SampleRate::<(MCLK, SR)> { cmd: self }
     }
 }
-/// Virtual field writer for more meaningfull sampling rate setting.
+/// Virtual field writer for more meaningful sampling rate setting.
 ///
 /// This actually write USB/NORMAL, BOSR, and SR fields.
 pub struct SampleRate<T> {
@@ -389,7 +389,7 @@ impl<SR> SampleRate<(Mclk12M, SR)> {
     }
 }
 
-//Once SampleRate have been explicitly set, a valid command can be instanciated
+//Once SampleRate have been explicitly set, a valid command can be instantiated
 impl<MCLK> Sampling<(MCLK, SrIsSet)> {
     /// Instanciate a command
     pub fn into_command(self) -> Command<()> {
@@ -415,7 +415,7 @@ impl Sampling<(Normal, BosrIsClear, SrIsSet)> {
     }
 }
 
-//Once sr have been explicitly set, a valid command can be instanciated
+//Once sr have been explicitly set, a valid command can be instantiated
 impl<MODE, BOSR> Sampling<(MODE, BOSR, SrIsSet)> {
     /// Instanciate a command
     pub fn into_command(self) -> Command<()> {
