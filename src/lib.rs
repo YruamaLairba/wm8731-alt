@@ -1,21 +1,19 @@
 //! Another simple HAL for the Cirrus Logic/Wolfson WM8731 audio codec
 //!
 //! This crate provides simple abstractions to configure the WM8731 and implement mechanism to
-//! avoid some invalid or incoherent configuration.
+//! avoid some (but not all) invalid or incoherent configuration.
 //!
-//! To control the chip, you need to instantiate an I2C or SPI interface
+//! ## Example
 //! ```
+//! # use wm8731_alt::prelude::*;
+//! # use wm8731_alt::Wm8731;
 //! # #[cfg(any())]
+//! # {
+//! // first, you need to instantiate an interface
 //! let interface = I2CInterface::new(i2c, 0b0011010);
-//! ```
-//! Then you instantiate the Wm8731 driver using this interface.
-//! ```
-//! # #[cfg(any())]
+//! // then, you instantiate the driver using this interface
 //! let wm8731 = Wm8731::new(interface);
-//! ```
-//! And finally, you build a command and send it.
-//! ```
-//! # #[cfg(any())]
+//! // finally, you build a command and send it.
 //! let cmd = left_headphone_out()
 //!     .hpvol()
 //!     .db(HpVoldB::N6DB)
@@ -23,6 +21,7 @@
 //!     .set_bit()
 //!     .into_command();
 //! wm8731.send(cmd);
+//! # }
 //! ```
 //!
 #![no_std]
@@ -34,6 +33,7 @@ mod macros;
 
 pub mod command;
 pub mod interface;
+pub mod prelude;
 
 ///The wm8731 driver
 pub struct Wm8731<I> {
