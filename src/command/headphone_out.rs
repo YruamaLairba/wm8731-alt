@@ -1,12 +1,18 @@
 //! Headphone ouputs configuration
 #![allow(clippy::new_without_default)]
 
-use crate::{Command, Left, Right};
+use super::Command;
 use core::marker::PhantomData;
 
 #[path = "hp_vol_db.rs"]
 mod hp_vol_db;
 pub use hp_vol_db::*;
+
+///Marker indicating left channel
+pub struct Left;
+
+///Marker indicating right channel
+pub struct Right;
 
 ///Headphone out configuration builder
 #[derive(Debug, Eq, PartialEq)]

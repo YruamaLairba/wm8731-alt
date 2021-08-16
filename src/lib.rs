@@ -8,11 +8,6 @@ mod macros;
 pub mod command;
 pub mod interface;
 
-///Marker indicating left channel concern
-pub struct Left;
-
-///Marker indicating right channel concern
-pub struct Right;
 
 ///The wm8731 driver
 pub struct Wm8731<I> {
