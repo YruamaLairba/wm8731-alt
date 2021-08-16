@@ -1,80 +1,18 @@
 #![no_std]
-use core::marker::PhantomData;
-
+use crate::command::Command;
 use crate::interface::WriteFrame;
 
 #[macro_use]
 mod macros;
 
-pub mod active_control;
-pub mod analogue_audio_path;
-pub mod digital_audio_interface;
-pub mod digital_audio_path;
-pub mod headphone_out;
+pub mod command;
 pub mod interface;
-pub mod line_in;
-pub mod power_down;
-pub mod sampling;
-
-pub mod reset {
-    //! Reset the device
-    #![allow(clippy::new_without_default)]
-    use crate::Command;
-    use core::marker::PhantomData;
-    /// Reset command builder.
-    #[derive(Debug, Eq, PartialEq)]
-    pub struct Reset {
-        data: u16,
-    }
-
-    impl Copy for Reset {}
-
-    impl Clone for Reset {
-        fn clone(&self) -> Self {
-            *self
-        }
-    }
-
-    /// Instantiate a reset command builder.
-    pub fn reset() -> Reset {
-        Reset::new()
-    }
-
-    impl Reset {
-        fn new() -> Self {
-            Self {
-                data: 0b110 << 9 | 0b1001_1111,
-            }
-        }
-        pub fn into_command(self) -> Command<()> {
-            Command::<()> {
-                data: self.data,
-                t: PhantomData::<()>,
-            }
-        }
-    }
-}
 
 ///Marker indicating left channel concern
 pub struct Left;
 
 ///Marker indicating right channel concern
 pub struct Right;
-
-///Represent a command to send to the codec, that is register address and content to write in it.
-#[derive(Debug, Eq, PartialEq)]
-pub struct Command<T> {
-    data: u16,
-    t: PhantomData<T>,
-}
-
-impl<T> Copy for Command<T> {}
-
-impl<T> Clone for Command<T> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
 
 pub struct Wm8731<I> {
     interface: I,
@@ -86,7 +24,7 @@ where
 {
     ///Reset the codec and instantiate a driver.
     pub fn new(interface: I) -> Self {
-        use crate::reset::*;
+        use crate::command::reset::*;
         let mut codec = Self { interface };
         codec.send(reset().into_command());
         codec
