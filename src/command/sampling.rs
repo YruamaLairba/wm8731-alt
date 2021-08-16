@@ -50,13 +50,17 @@
 //! ```
 //!
 //! # Safety and coherence
-//! For safety and coherence some reason, a compile time check is done to enforce some
-//! manipulations and prohibit others. To avoid compilation error from this checks, a good
-//! guideline is to always setup explicitly USB/NORMAL, BOSR first and then setup SR for the raw
-//! style, and explicitly setup SampleRate fields for the style with master clock. don't forget to
-//! check with the datasheet if values are good.
+//! To guarantee safety and coherence, some manipulation are enforced or prohibited.
 //!
-//! ## Example
+//! When indicating a Master clock:
+//!  - sample rate need to be set explicitly.
+//!  - available sample rate is Master Clock dependent.
+//!
+//! With the raw method:
+//!  - if `usb_normal` or `bosr` are written, `sr` is invalidated and need to be rewritten.
+//!  - available `sr` setting depends on `usb_normal` and `bosr` setting.
+//!
+//! ## Example of bad usage
 //! ```
 //! # #[cfg(any())] //avoid some compilation error when testing doc
 //! # {
