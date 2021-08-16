@@ -14,6 +14,7 @@ pub struct Left;
 ///Marker indicating right channel concern
 pub struct Right;
 
+///The wm8731 driver
 pub struct Wm8731<I> {
     interface: I,
 }
@@ -22,13 +23,15 @@ impl<I> Wm8731<I>
 where
     I: WriteFrame,
 {
-    ///Reset the codec and instantiate a driver.
+    ///Instantiate a driver. This also reset the codec to guarantee a known state.
     pub fn new(interface: I) -> Self {
         use crate::command::reset::*;
         let mut codec = Self { interface };
         codec.send(reset().into_command());
         codec
     }
+
+    ///Send a command to the codec.
     pub fn send<T>(&mut self, cmd: Command<T>) {
         self.interface.send(cmd.into());
     }
