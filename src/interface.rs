@@ -44,7 +44,7 @@ pub trait WriteFrame {
     fn send(&mut self, frame: Frame);
 }
 
-/// Generic blocking I2C communication implementation using embedded-hal.
+/// I2C communication implementation using embedded-hal.
 pub struct I2CInterface<I2C> {
     i2c: I2C,
     address: u8,
@@ -92,7 +92,13 @@ impl<SPI, CS, W> SPIInterface<SPI, CS, W> {
     }
 }
 
-impl<SPI, CS> WriteFrame for SPIInterface<SPI, CS, u8>
+/// 8 bits words SPI communication implementation using embedded-hal.
+pub type SPIInterfaceU8<SPI, CS> = SPIInterface<SPI, CS, u8>;
+
+/// 16 bits words SPI communication implementation using embedded-hal.
+pub type SPIInterfaceU16<SPI, CS> = SPIInterface<SPI, CS, u16>;
+
+impl<SPI, CS> WriteFrame for SPIInterfaceU8<SPI, CS>
 where
     SPI: spi::Write<u8>,
     CS: OutputPin,
@@ -105,7 +111,7 @@ where
     }
 }
 
-impl<SPI, CS> WriteFrame for SPIInterface<SPI, CS, u16>
+impl<SPI, CS> WriteFrame for SPIInterfaceU16<SPI, CS>
 where
     SPI: spi::Write<u16>,
     CS: OutputPin,
