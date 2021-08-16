@@ -60,18 +60,15 @@
 //! ```
 //! # #[cfg(any())] //avoid some compilation error when testing doc
 //! # {
-//! # use wm8731_alt::sampling::*;
+//! # use wm8731_alt::command::sampling::*;
 //! //error, sample rate require to be explicitly set
 //! let cmd = sampling_with_mclk(Mclk12M288).into_command();
 //! //error, this sampling rate setup is impossible with the current master clock
 //! let cmd = sampling_with_mclk(Mclk12M288).sample_rate().adc44k1_dac44k1();
-//! //error, sr require to be explicitly set
-//! let cmd = sampling().into_command();
-//! //error, USB/NORMAL and BOSR need to be set before SR because it affect SR validity
-//! let cmd = sampling().sr().sr_0b0000();
-//! //error, cannot change USB/NORMAL and BOSR after SR because it affect SR validity
-//! let cmd =
-//! sampling().usb_normal().usb().bosr().clear_bit().sr().sr_0b0000().bosr().set_bit();
+//! //error, change USB/Normal invalidate SR.
+//! let cmd = sampling().usb_normal().usb().into_command();
+//! //error, change BOSR invalidate SR.
+//! let cmd = sampling().bosr().clear_bit().into_command();
 //! //error, USB/NORMAL, BOSR, SR combination is invalid
 //! let cmd =
 //! sampling().usb_normal().usb().bosr().set_bit().sr().sr_0b0000();
@@ -89,26 +86,18 @@ pub mod state_marker {
     //!
     //! They are used with the sampling builder to provide coherent API and compile time safety check.
 
-    /// Marker trait to say a marker correspond to something set.
-    pub trait IsSet {}
-
     /// Marker used to indicate Normal mode.
     pub struct Normal;
-    impl IsSet for Normal {}
     /// Marker used to indicate USB mode.
     pub struct Usb;
-    impl IsSet for Usb {}
     /// Marker used to indicate BOSR bit is set.
     pub struct BosrIsSet;
-    impl IsSet for BosrIsSet {}
     /// Marker used to indicate BOSR bit is clear.
     pub struct BosrIsClear;
-    impl IsSet for BosrIsClear {}
     /// Marker to indicate Sr is exeplictly set.
     pub struct SrIsSet;
-    impl IsSet for SrIsSet {}
 
-    /// Marker used to indicate something is not yet defined but required to be.
+    /// Marker used to indicate something is not yet defined or invalid.
     pub struct Unset;
 }
 
@@ -126,6 +115,16 @@ impl<T> Copy for Sampling<T> {}
 impl<T> Clone for Sampling<T> {
     fn clone(&self) -> Self {
         *self
+    }
+}
+
+//common to both method it's always safe to manipulate those fields
+impl<T> Sampling<T> {
+    pub fn clkidiv2(self) -> Clkidiv2<T> {
+        Clkidiv2 { cmd: self }
+    }
+    pub fn clkodiv2(self) -> Clkodiv2<T> {
+        Clkodiv2 { cmd: self }
     }
 }
 
@@ -386,28 +385,29 @@ impl<SR> SampleRate<(Mclk12M, SR)> {
     }
 }
 
-/// Instanciate a command builder for sampling configuration.
-pub fn sampling() -> Sampling<(Normal, BosrIsSet, SrIsSet)> {
-    Sampling::<(Normal, BosrIsSet, SrIsSet)>::new()
-}
-
-impl Sampling<(Normal, BosrIsSet, SrIsSet)> {
-    #[allow(clippy::identity_op)]
-    fn new() -> Self {
-        Self {
-            data: 0b1000 << 9 | 0b0000_0000,
-            t: PhantomData::<(Normal, BosrIsSet, SrIsSet)>,
+//Once SampleRate have been explicitly set, a valid command can be instanciated
+impl<MCLK> Sampling<(MCLK, SrIsSet)> {
+    /// Instanciate a command
+    pub fn into_command(self) -> Command<()> {
+        Command::<()> {
+            data: self.data,
+            t: PhantomData::<()>,
         }
     }
 }
 
-//it's always safe to manipulate those fields
-impl<T> Sampling<T> {
-    pub fn clkidiv2(self) -> Clkidiv2<T> {
-        Clkidiv2 { cmd: self }
-    }
-    pub fn clkodiv2(self) -> Clkodiv2<T> {
-        Clkodiv2 { cmd: self }
+/// Instanciate a command builder for sampling configuration.
+pub fn sampling() -> Sampling<(Normal, BosrIsClear, SrIsSet)> {
+    Sampling::<(Normal, BosrIsClear, SrIsSet)>::new()
+}
+
+impl Sampling<(Normal, BosrIsClear, SrIsSet)> {
+    #[allow(clippy::identity_op)]
+    fn new() -> Self {
+        Self {
+            data: 0b1000 << 9 | 0b0000_0000,
+            t: PhantomData::<(Normal, BosrIsClear, SrIsSet)>,
+        }
     }
 }
 
@@ -422,111 +422,79 @@ impl<MODE, BOSR> Sampling<(MODE, BOSR, SrIsSet)> {
     }
 }
 
-//Once SampleRate have been explicitly set, a valid command can be instanciated
-impl<MCLK> Sampling<(MCLK, SrIsSet)> {
-    /// Instanciate a command
-    pub fn into_command(self) -> Command<()> {
-        Command::<()> {
-            data: self.data,
-            t: PhantomData::<()>,
-        }
-    }
-}
-
-//make the normal/usb mode only settable once (over constraint?)
-//prevent to change normal/ub mode once sr is set
-impl<BOSR> Sampling<(Unset, BOSR, Unset)> {
-    pub fn usb_normal(self) -> UsbNormal<(Unset, BOSR, Unset)> {
+//field accessible in raw mode
+impl<MODE, BOSR, SR> Sampling<(MODE, BOSR, SR)> {
+    pub fn usb_normal(self) -> UsbNormal<(MODE, BOSR, SR)> {
         UsbNormal { cmd: self }
     }
-}
-
-//make the bosr bit only settable once (over constraint?)
-//prevent to change bosr bit once sr is set
-impl<MODE> Sampling<(MODE, Unset, Unset)> {
-    pub fn bosr(self) -> Bosr<(MODE, Unset, Unset)> {
+    pub fn bosr(self) -> Bosr<(MODE, BOSR, SR)> {
         Bosr { cmd: self }
     }
-}
-
-//When Usb mode is explicitly set, enforce bosr is set before setting sr
-impl<BOSR, SR> Sampling<(Usb, BOSR, SR)>
-where
-    BOSR: IsSet,
-{
-    pub fn sr(self) -> Sr<(Usb, BOSR, SR)> {
+    pub fn sr(self) -> Sr<(MODE, BOSR, SR)> {
         Sr { cmd: self }
     }
 }
 
-//When Normal mode, sr validity is no affect by bosr, so no need to explicitly set it before setting
-//SR
-impl<BOSR, SR> Sampling<(Normal, BOSR, SR)> {
-    pub fn sr(self) -> Sr<(Normal, BOSR, SR)> {
-        Sr { cmd: self }
-    }
-}
-
-/// Field writer. Allow to select USB or Normal mode.
+/// Field writer. Allow to select USB or Normal mode. Invalidate `Sr` field.
 pub struct UsbNormal<T> {
     cmd: Sampling<T>,
 }
 
 impl<MODE, BOSR, SR> UsbNormal<(MODE, BOSR, SR)> {
     #[must_use]
-    pub fn clear_bit(mut self) -> Sampling<(Normal, BOSR, SR)> {
+    pub fn clear_bit(mut self) -> Sampling<(Normal, BOSR, Unset)> {
         self.cmd.data &= !(0b1 << 0);
-        Sampling::<(Normal, BOSR, SR)> {
+        Sampling::<(Normal, BOSR, Unset)> {
             data: self.cmd.data,
-            t: PhantomData::<(Normal, BOSR, SR)>,
+            t: PhantomData::<(Normal, BOSR, Unset)>,
         }
     }
     #[must_use]
-    pub fn set_bit(mut self) -> Sampling<(Usb, BOSR, SR)> {
+    pub fn set_bit(mut self) -> Sampling<(Usb, BOSR, Unset)> {
         self.cmd.data |= 0b1 << 0;
-        Sampling::<(Usb, BOSR, SR)> {
+        Sampling::<(Usb, BOSR, Unset)> {
             data: self.cmd.data,
-            t: PhantomData::<(Usb, BOSR, SR)>,
+            t: PhantomData::<(Usb, BOSR, Unset)>,
         }
     }
     #[must_use]
-    pub fn normal(mut self) -> Sampling<(Normal, BOSR, SR)> {
+    pub fn normal(mut self) -> Sampling<(Normal, BOSR, Unset)> {
         self.cmd.data &= !(0b1 << 0);
-        Sampling::<(Normal, BOSR, SR)> {
+        Sampling::<(Normal, BOSR, Unset)> {
             data: self.cmd.data,
-            t: PhantomData::<(Normal, BOSR, SR)>,
+            t: PhantomData::<(Normal, BOSR, Unset)>,
         }
     }
     #[must_use]
-    pub fn usb(mut self) -> Sampling<(Usb, BOSR, SR)> {
+    pub fn usb(mut self) -> Sampling<(Usb, BOSR, Unset)> {
         self.cmd.data |= 0b1 << 0;
-        Sampling::<(Usb, BOSR, SR)> {
+        Sampling::<(Usb, BOSR, Unset)> {
             data: self.cmd.data,
-            t: PhantomData::<(Usb, BOSR, SR)>,
+            t: PhantomData::<(Usb, BOSR, Unset)>,
         }
     }
 }
 
-/// Field writer. Select the Base Over-Sampling Rate.
+/// Field writer. Select the Base Over-Sampling Rate. Invalidate `Sr` field.
 pub struct Bosr<T> {
     cmd: Sampling<T>,
 }
 
 impl<MODE, BOSR, SR> Bosr<(MODE, BOSR, SR)> {
     #[must_use]
-    pub fn clear_bit(mut self) -> Sampling<(MODE, BosrIsClear, SR)> {
+    pub fn clear_bit(mut self) -> Sampling<(MODE, BosrIsClear, Unset)> {
         self.cmd.data &= !(0b1 << 1);
-        Sampling::<(MODE, BosrIsClear, SR)> {
+        Sampling::<(MODE, BosrIsClear, Unset)> {
             data: self.cmd.data,
-            t: PhantomData::<(MODE, BosrIsClear, SR)>,
+            t: PhantomData::<(MODE, BosrIsClear, Unset)>,
         }
     }
     #[must_use]
-    pub fn set_bit(mut self) -> Sampling<(MODE, BosrIsSet, SR)> {
+    pub fn set_bit(mut self) -> Sampling<(MODE, BosrIsSet, Unset)> {
         self.cmd.data |= 0b1 << 1;
-        Sampling::<(MODE, BosrIsSet, SR)> {
+        Sampling::<(MODE, BosrIsSet, Unset)> {
             data: self.cmd.data,
-            t: PhantomData::<(MODE, BosrIsSet, SR)>,
+            t: PhantomData::<(MODE, BosrIsSet, Unset)>,
         }
     }
 }
@@ -659,26 +627,15 @@ mod tests {
     // all() to compile, any() to not compile
     #[cfg(all())]
     fn _should_compile() {
-        let new_cmd = sampling();
-        // for normal mode, setting bosr in not actually required
-        let _ = new_cmd
-            .usb_normal()
-            .normal()
-            .bosr()
-            .set_bit()
-            .sr()
-            .sr_0b1111()
+        let _ = sampling_with_mclk(Mclk12M288)
+            .sample_rate()
+            .adc48k_dac48k()
             .into_command();
-        //in usb mode, we need to set bosr before sr
-        let _ = new_cmd.usb_normal().usb().bosr().set_bit().sr().sr_0b1111();
-        //in usb mode, we need to set bosr before sr
-        let _ = new_cmd
-            .usb_normal()
-            .usb()
-            .bosr()
-            .clear_bit()
-            .sr()
-            .sr_0b0000();
+        let new_cmd = sampling();
+        //default is valid
+        new_cmd.into_command();
+        //setting sr from default is valid
+        new_cmd.sr().sr_0b0000().into_command();
     }
     // all() to compile, any() to not compile
     #[cfg(any())]
@@ -694,9 +651,27 @@ mod tests {
     // all() to compile, any() to not compile
     #[cfg(any())]
     fn _should_compile_error() {
+        //error, when specifying mclk, Sampling rate default value is undefined.
+        sampling_with_mclk(Mclk11M2896).into_command();
+        //error, invalid combinations of clock and sample rate.
+        sampling_with_mclk(Mclk11M2896)
+            .sample_rate()
+            .adc48k_dac48k();
+        sampling_with_mclk(Mclk16M9344)
+            .sample_rate()
+            .adc96k_dac96k();
+        sampling_with_mclk(Mclk12M288)
+            .sample_rate()
+            .adc44k1_dac44k1();
+        sampling_with_mclk(Mclk18M432)
+            .sample_rate()
+            .adc88k1_dac88k1();
+
         let new_cmd = sampling();
-        //error, bosr not set in usb mode sr not available
-        let _ = new_cmd.usb_normal().usb().sr().sr_0b1111();
+        //error, can't build the command, setting USB/Normal invalidate sr.
+        let _ = new_cmd.usb_normal().normal().into_command();
+        //error, can't build the command, setting BOSR invalidate sr.
+        let _ = new_cmd.bosr().clear_bit().into_command();
         //error, cannot set this sr value with this bosr value
         let _ = new_cmd
             .usb_normal()
@@ -707,21 +682,5 @@ mod tests {
             .sr_0b1111();
         //error, cannot set this sr value with this bosr value
         let _ = new_cmd.usb_normal().usb().bosr().set_bit().sr().sr_0b0000();
-        //error, cannot change usb_normal after sr is set
-        let _ = new_cmd
-            .usb_normal()
-            .normal()
-            .sr()
-            .sr_0b0000()
-            .usb_normal()
-            .usb();
-        //error, cannot change bosr after sr is set
-        let _ = new_cmd
-            .usb_normal()
-            .normal()
-            .sr()
-            .sr_0b0000()
-            .bosr()
-            .set_bit();
     }
 }
