@@ -20,6 +20,7 @@ pub use line_in::{left_line_in, right_line_in};
 pub use power_down::power_down;
 pub use reset::reset;
 pub use sampling::sampling;
+pub use sampling::sampling_with_mclk;
 
 pub mod reset {
     //! Reset the device
