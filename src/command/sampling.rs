@@ -53,7 +53,7 @@
 //! To guarantee safety and coherence, some manipulation are enforced or prohibited.
 //!
 //! When indicating a Master clock:
-//!  - sample rate need to be set explicitly.
+//!  - `sample_rate` need to be set explicitly.
 //!  - available sample rate is Master Clock dependent.
 //!
 //! With the raw method:
@@ -95,14 +95,15 @@ pub mod state_marker {
     /// Marker used to indicate USB mode.
     pub struct Usb;
     /// Marker used to indicate BOSR bit is set.
-    pub struct BosrIsSet;
+    pub struct BosrSet;
     /// Marker used to indicate BOSR bit is clear.
-    pub struct BosrIsClear;
-    /// Marker to indicate Sr is explicitly set.
-    pub struct SrIsSet;
-
-    /// Marker used to indicate something is not yet defined or invalid.
-    pub struct Unset;
+    pub struct BosrClear;
+    /// Marker used to indicate Sr or SampleRate is valid.
+    pub struct SrValid;
+    /// Marker used to indicate Sr or SampleRate is not valid.
+    ///
+    /// `Sampling` configuration marked with this can not produce a command.
+    pub struct SrInvalid;
 }
 
 use state_marker::*;
@@ -151,13 +152,13 @@ impl Mclk for Mclk12M {}
 pub trait Mclk {}
 
 /// Instantiate a command builder to set sampling configuration for a particular master clock.
-pub fn sampling_with_mclk<MCLK>(_: MCLK) -> Sampling<(MCLK, Unset)>
+pub fn sampling_with_mclk<MCLK>(_: MCLK) -> Sampling<(MCLK, SrInvalid)>
 where
     MCLK: Mclk,
 {
-    Sampling::<(MCLK, Unset)> {
+    Sampling::<(MCLK, SrInvalid)> {
         data: 0b1000 << 9,
-        t: PhantomData::<(MCLK, Unset)>,
+        t: PhantomData::<(MCLK, SrInvalid)>,
     }
 }
 
@@ -177,12 +178,12 @@ pub struct SampleRate<T> {
 }
 
 impl<MCLK, SR> SampleRate<(MCLK, SR)> {
-    unsafe fn bits(mut self, value: u8) -> Sampling<(MCLK, SrIsSet)> {
+    unsafe fn bits(mut self, value: u8) -> Sampling<(MCLK, SrValid)> {
         let mask = !((!0) << 6);
         self.cmd.data = self.cmd.data & !mask | (value as u16) << 2 & mask;
-        Sampling::<(MCLK, SrIsSet)> {
+        Sampling::<(MCLK, SrValid)> {
             data: self.cmd.data,
-            t: PhantomData::<(MCLK, SrIsSet)>,
+            t: PhantomData::<(MCLK, SrValid)>,
         }
     }
 }
@@ -190,32 +191,32 @@ impl<MCLK, SR> SampleRate<(MCLK, SR)> {
 impl<SR> SampleRate<(Mclk12M288, SR)> {
     ///Set 48khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc48k_dac48k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+    pub fn adc48k_dac48k(self) -> Sampling<(Mclk12M288, SrValid)> {
         unsafe { self.bits(0b000000) }
     }
     ///Set sampling rate of 48khz for ADC and 8khz for DAC.
     #[must_use]
-    pub fn adc48k_dac8k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+    pub fn adc48k_dac8k(self) -> Sampling<(Mclk12M288, SrValid)> {
         unsafe { self.bits(0b000100) }
     }
     ///Set sampling rate of 8khz for ADC and 48khz for DAC.
     #[must_use]
-    pub fn adc8k_dac48k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+    pub fn adc8k_dac48k(self) -> Sampling<(Mclk12M288, SrValid)> {
         unsafe { self.bits(0b001000) }
     }
     ///Set 8khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc8k_dac8k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+    pub fn adc8k_dac8k(self) -> Sampling<(Mclk12M288, SrValid)> {
         unsafe { self.bits(0b001100) }
     }
     ///Set 32khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc32k_dac32k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+    pub fn adc32k_dac32k(self) -> Sampling<(Mclk12M288, SrValid)> {
         unsafe { self.bits(0b011000) }
     }
     ///Set 96khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc96k_dac96k(self) -> Sampling<(Mclk12M288, SrIsSet)> {
+    pub fn adc96k_dac96k(self) -> Sampling<(Mclk12M288, SrValid)> {
         unsafe { self.bits(0b011100) }
     }
 }
@@ -223,32 +224,32 @@ impl<SR> SampleRate<(Mclk12M288, SR)> {
 impl<SR> SampleRate<(Mclk18M432, SR)> {
     ///Set 48khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc48k_dac48k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+    pub fn adc48k_dac48k(self) -> Sampling<(Mclk18M432, SrValid)> {
         unsafe { self.bits(0b000010) }
     }
     ///Set sampling rate of 48khz for ADC and 8khz for DAC.
     #[must_use]
-    pub fn adc48k_dac8k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+    pub fn adc48k_dac8k(self) -> Sampling<(Mclk18M432, SrValid)> {
         unsafe { self.bits(0b000110) }
     }
     ///Set sampling rate of 8khz for ADC and 48khz for DAC.
     #[must_use]
-    pub fn adc8k_dac48k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+    pub fn adc8k_dac48k(self) -> Sampling<(Mclk18M432, SrValid)> {
         unsafe { self.bits(0b001010) }
     }
     ///Set 8khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc8k_dac8k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+    pub fn adc8k_dac8k(self) -> Sampling<(Mclk18M432, SrValid)> {
         unsafe { self.bits(0b001110) }
     }
     ///Set 32khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc32k_dac32k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+    pub fn adc32k_dac32k(self) -> Sampling<(Mclk18M432, SrValid)> {
         unsafe { self.bits(0b011010) }
     }
     ///Set 96khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc96k_dac96k(self) -> Sampling<(Mclk18M432, SrIsSet)> {
+    pub fn adc96k_dac96k(self) -> Sampling<(Mclk18M432, SrValid)> {
         unsafe { self.bits(0b011110) }
     }
 }
@@ -256,33 +257,33 @@ impl<SR> SampleRate<(Mclk18M432, SR)> {
 impl<SR> SampleRate<(Mclk11M2896, SR)> {
     ///Set 44.1khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc44k1_dac44k1(self) -> Sampling<(Mclk11M2896, SrIsSet)> {
+    pub fn adc44k1_dac44k1(self) -> Sampling<(Mclk11M2896, SrValid)> {
         unsafe { self.bits(0b100000) }
     }
     ///Set sampling rate of 44.1khz for ADC and approximatively 8khz for DAC.
     ///
     ///The actual DAC sampling rate is 8.018kHz
     #[must_use]
-    pub fn adc44k1_dac8k(self) -> Sampling<(Mclk11M2896, SrIsSet)> {
+    pub fn adc44k1_dac8k(self) -> Sampling<(Mclk11M2896, SrValid)> {
         unsafe { self.bits(0b100100) }
     }
     ///Set sampling rate of approximatively 8khz for ADC and 44.1khz for DAC.
     ///
     ///The actual ADC sampling rate is 8.018kHz
     #[must_use]
-    pub fn adc8k_dac44k1(self) -> Sampling<(Mclk11M2896, SrIsSet)> {
+    pub fn adc8k_dac44k1(self) -> Sampling<(Mclk11M2896, SrValid)> {
         unsafe { self.bits(0b101000) }
     }
     ///Set approximatively 8khz sampling rate for ADC and DAC.
     ///
     ///The actual sampling rate is 8.018kHz
     #[must_use]
-    pub fn adc8k_dac8k(self) -> Sampling<(Mclk11M2896, SrIsSet)> {
+    pub fn adc8k_dac8k(self) -> Sampling<(Mclk11M2896, SrValid)> {
         unsafe { self.bits(0b101100) }
     }
     ///Set 88.2khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc88k2_dac88k2(self) -> Sampling<(Mclk11M2896, SrIsSet)> {
+    pub fn adc88k2_dac88k2(self) -> Sampling<(Mclk11M2896, SrValid)> {
         unsafe { self.bits(0b111100) }
     }
 }
@@ -290,33 +291,33 @@ impl<SR> SampleRate<(Mclk11M2896, SR)> {
 impl<SR> SampleRate<(Mclk16M9344, SR)> {
     ///Set 44.1khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc44k1_dac44k1(self) -> Sampling<(Mclk16M9344, SrIsSet)> {
+    pub fn adc44k1_dac44k1(self) -> Sampling<(Mclk16M9344, SrValid)> {
         unsafe { self.bits(0b100010) }
     }
     ///Set sampling rate of 44.1khz for ADC and approximatively 8khz for DAC.
     ///
     ///The actual DAC sampling rate is 8.018kHz
     #[must_use]
-    pub fn adc44k1_dac8k(self) -> Sampling<(Mclk16M9344, SrIsSet)> {
+    pub fn adc44k1_dac8k(self) -> Sampling<(Mclk16M9344, SrValid)> {
         unsafe { self.bits(0b100110) }
     }
     ///Set sampling rate of approximatively 8khz for ADC and 44.1khz for DAC.
     ///
     ///The actual ADC sampling rate is 8.018kHz
     #[must_use]
-    pub fn adc8k_dac44k1(self) -> Sampling<(Mclk16M9344, SrIsSet)> {
+    pub fn adc8k_dac44k1(self) -> Sampling<(Mclk16M9344, SrValid)> {
         unsafe { self.bits(0b101010) }
     }
     ///Set approximatively 8khz sampling rate for ADC and DAC.
     ///
     ///The actual sampling rate is 8.018kHz
     #[must_use]
-    pub fn adc8k_dac8k(self) -> Sampling<(Mclk16M9344, SrIsSet)> {
+    pub fn adc8k_dac8k(self) -> Sampling<(Mclk16M9344, SrValid)> {
         unsafe { self.bits(0b101110) }
     }
     ///Set 88.2khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc88k2_dac88k2(self) -> Sampling<(Mclk16M9344, SrIsSet)> {
+    pub fn adc88k2_dac88k2(self) -> Sampling<(Mclk16M9344, SrValid)> {
         unsafe { self.bits(0b111110) }
     }
 }
@@ -324,73 +325,73 @@ impl<SR> SampleRate<(Mclk16M9344, SR)> {
 impl<SR> SampleRate<(Mclk12M, SR)> {
     ///Set 48khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc48k_dac48k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc48k_dac48k(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b000001) }
     }
     ///Set approximatively 44.1khz sampling rate for ADC and DAC.
     ///
     ///The actual sampling rate is 44.118kHz.
     #[must_use]
-    pub fn adc44k1_dac44k1(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc44k1_dac44k1(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b100011) }
     }
     ///Set sampling rate of 48khz for ADC and 8khz for DAC.
     #[must_use]
-    pub fn adc48k_dac8k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc48k_dac8k(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b000101) }
     }
     ///Set sampling rate of approximatively 44.1khz for ADC and approximatively 8khz for DAC.
     ///
     ///The actual sampling rate are 44.118kHz for the ADC and 8.021kHz for the DAC.
     #[must_use]
-    pub fn adc44k1_dac8k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc44k1_dac8k(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b100111) }
     }
     ///Set sampling rate of 8khz for ADC and 48khz for DAC.
     #[must_use]
-    pub fn adc8k_dac48k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc8k_dac48k(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b001001) }
     }
     ///Set sampling rate of approximatively 8khz for ADC and approximatively 44.1khz for DAC.
     ///
     ///The actual sampling rate are 8.021kHz for the ADC and 44.118kHz  for the DAC.
     #[must_use]
-    pub fn adc8k_dac44k1(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc8k_dac44k1(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b101011) }
     }
     ///Set 8khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc8k_dac8k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc8k_dac8k(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b001101) }
     }
     ///Set approximatively 8khz sampling rate for ADC and DAC.
     ///
     ///The actual sampling rate is 8.021kHz.
     #[must_use]
-    pub fn adc8k_dac8k_bis(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc8k_dac8k_bis(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b101111) }
     }
     ///Set 32khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc32k_dac32k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc32k_dac32k(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b011001) }
     }
     ///Set 96khz sampling rate for ADC and DAC.
     #[must_use]
-    pub fn adc96k_dac96k(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc96k_dac96k(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b011101) }
     }
     ///Set approximatively 88.2kHz sampling rate for ADC and DAC.
     ///
     ///The actual sampling rate is 88.235kHz.
     #[must_use]
-    pub fn adc88k2_dac88k2(self) -> Sampling<(Mclk12M, SrIsSet)> {
+    pub fn adc88k2_dac88k2(self) -> Sampling<(Mclk12M, SrValid)> {
         unsafe { self.bits(0b111111) }
     }
 }
 
 //Once SampleRate have been explicitly set, a valid command can be instantiated
-impl<MCLK> Sampling<(MCLK, SrIsSet)> {
+impl<MCLK> Sampling<(MCLK, SrValid)> {
     /// Instanciate a command
     pub fn into_command(self) -> Command<()> {
         Command::<()> {
@@ -401,22 +402,22 @@ impl<MCLK> Sampling<(MCLK, SrIsSet)> {
 }
 
 /// Instanciate a command builder for sampling configuration.
-pub fn sampling() -> Sampling<(Normal, BosrIsClear, SrIsSet)> {
-    Sampling::<(Normal, BosrIsClear, SrIsSet)>::new()
+pub fn sampling() -> Sampling<(Normal, BosrClear, SrValid)> {
+    Sampling::<(Normal, BosrClear, SrValid)>::new()
 }
 
-impl Sampling<(Normal, BosrIsClear, SrIsSet)> {
+impl Sampling<(Normal, BosrClear, SrValid)> {
     #[allow(clippy::identity_op)]
     fn new() -> Self {
         Self {
             data: 0b1000 << 9 | 0b0000_0000,
-            t: PhantomData::<(Normal, BosrIsClear, SrIsSet)>,
+            t: PhantomData::<(Normal, BosrClear, SrValid)>,
         }
     }
 }
 
 //Once sr have been explicitly set, a valid command can be instantiated
-impl<MODE, BOSR> Sampling<(MODE, BOSR, SrIsSet)> {
+impl<MODE, BOSR> Sampling<(MODE, BOSR, SrValid)> {
     /// Instanciate a command
     pub fn into_command(self) -> Command<()> {
         Command::<()> {
@@ -446,35 +447,35 @@ pub struct UsbNormal<T> {
 
 impl<MODE, BOSR, SR> UsbNormal<(MODE, BOSR, SR)> {
     #[must_use]
-    pub fn clear_bit(mut self) -> Sampling<(Normal, BOSR, Unset)> {
+    pub fn clear_bit(mut self) -> Sampling<(Normal, BOSR, SrInvalid)> {
         self.cmd.data &= !(0b1 << 0);
-        Sampling::<(Normal, BOSR, Unset)> {
+        Sampling::<(Normal, BOSR, SrInvalid)> {
             data: self.cmd.data,
-            t: PhantomData::<(Normal, BOSR, Unset)>,
+            t: PhantomData::<(Normal, BOSR, SrInvalid)>,
         }
     }
     #[must_use]
-    pub fn set_bit(mut self) -> Sampling<(Usb, BOSR, Unset)> {
+    pub fn set_bit(mut self) -> Sampling<(Usb, BOSR, SrInvalid)> {
         self.cmd.data |= 0b1 << 0;
-        Sampling::<(Usb, BOSR, Unset)> {
+        Sampling::<(Usb, BOSR, SrInvalid)> {
             data: self.cmd.data,
-            t: PhantomData::<(Usb, BOSR, Unset)>,
+            t: PhantomData::<(Usb, BOSR, SrInvalid)>,
         }
     }
     #[must_use]
-    pub fn normal(mut self) -> Sampling<(Normal, BOSR, Unset)> {
+    pub fn normal(mut self) -> Sampling<(Normal, BOSR, SrInvalid)> {
         self.cmd.data &= !(0b1 << 0);
-        Sampling::<(Normal, BOSR, Unset)> {
+        Sampling::<(Normal, BOSR, SrInvalid)> {
             data: self.cmd.data,
-            t: PhantomData::<(Normal, BOSR, Unset)>,
+            t: PhantomData::<(Normal, BOSR, SrInvalid)>,
         }
     }
     #[must_use]
-    pub fn usb(mut self) -> Sampling<(Usb, BOSR, Unset)> {
+    pub fn usb(mut self) -> Sampling<(Usb, BOSR, SrInvalid)> {
         self.cmd.data |= 0b1 << 0;
-        Sampling::<(Usb, BOSR, Unset)> {
+        Sampling::<(Usb, BOSR, SrInvalid)> {
             data: self.cmd.data,
-            t: PhantomData::<(Usb, BOSR, Unset)>,
+            t: PhantomData::<(Usb, BOSR, SrInvalid)>,
         }
     }
 }
@@ -486,19 +487,19 @@ pub struct Bosr<T> {
 
 impl<MODE, BOSR, SR> Bosr<(MODE, BOSR, SR)> {
     #[must_use]
-    pub fn clear_bit(mut self) -> Sampling<(MODE, BosrIsClear, Unset)> {
+    pub fn clear_bit(mut self) -> Sampling<(MODE, BosrClear, SrInvalid)> {
         self.cmd.data &= !(0b1 << 1);
-        Sampling::<(MODE, BosrIsClear, Unset)> {
+        Sampling::<(MODE, BosrClear, SrInvalid)> {
             data: self.cmd.data,
-            t: PhantomData::<(MODE, BosrIsClear, Unset)>,
+            t: PhantomData::<(MODE, BosrClear, SrInvalid)>,
         }
     }
     #[must_use]
-    pub fn set_bit(mut self) -> Sampling<(MODE, BosrIsSet, Unset)> {
+    pub fn set_bit(mut self) -> Sampling<(MODE, BosrSet, SrInvalid)> {
         self.cmd.data |= 0b1 << 1;
-        Sampling::<(MODE, BosrIsSet, Unset)> {
+        Sampling::<(MODE, BosrSet, SrInvalid)> {
             data: self.cmd.data,
-            t: PhantomData::<(MODE, BosrIsSet, Unset)>,
+            t: PhantomData::<(MODE, BosrSet, SrInvalid)>,
         }
     }
 }
@@ -514,110 +515,111 @@ impl<MODE, BOSR, SR> Sr<(MODE, BOSR, SR)> {
     ///
     /// # Safety
     ///
-    /// Some bit combinations are invalid, please read the datasheet.
-    pub unsafe fn bits(mut self, value: u8) -> Sampling<(MODE, BOSR, SrIsSet)> {
+    /// This is unsafe because it assume valid bits combination that may actually not. Please read
+    /// the datasheet to know what are the valid combinations.
+    pub unsafe fn bits(mut self, value: u8) -> Sampling<(MODE, BOSR, SrValid)> {
         let mask = !((!0) << 4) << 2;
         self.cmd.data = self.cmd.data & !mask | (value as u16) << 2 & mask;
-        Sampling::<(MODE, BOSR, SrIsSet)> {
+        Sampling::<(MODE, BOSR, SrValid)> {
             data: self.cmd.data,
-            t: PhantomData::<(MODE, BOSR, SrIsSet)>,
+            t: PhantomData::<(MODE, BOSR, SrValid)>,
         }
     }
 }
 
 impl<BOSR, SR> Sr<(Normal, BOSR, SR)> {
     #[must_use]
-    pub fn sr_0b0000(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b0000(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b0000) }
     }
     #[must_use]
-    pub fn sr_0b0001(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b0001(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b0001) }
     }
     #[must_use]
-    pub fn sr_0b0010(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b0010(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b0010) }
     }
     #[must_use]
-    pub fn sr_0b0011(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b0011(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b0011) }
     }
     #[must_use]
-    pub fn sr_0b0110(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b0110(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b0110) }
     }
     #[must_use]
-    pub fn sr_0b0111(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b0111(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b0111) }
     }
     #[must_use]
-    pub fn sr_0b1000(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b1000(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b1000) }
     }
     #[must_use]
-    pub fn sr_0b1001(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b1001(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b1001) }
     }
     #[must_use]
-    pub fn sr_0b1010(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b1010(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b1010) }
     }
     #[must_use]
-    pub fn sr_0b1011(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b1011(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b1011) }
     }
     #[must_use]
-    pub fn sr_0b1111(self) -> Sampling<(Normal, BOSR, SrIsSet)> {
+    pub fn sr_0b1111(self) -> Sampling<(Normal, BOSR, SrValid)> {
         unsafe { self.bits(0b1111) }
     }
 }
 
-impl<SR> Sr<(Usb, BosrIsClear, SR)> {
+impl<SR> Sr<(Usb, BosrClear, SR)> {
     #[must_use]
-    pub fn sr_0b0000(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
+    pub fn sr_0b0000(self) -> Sampling<(Usb, BosrClear, SrValid)> {
         unsafe { self.bits(0b0000) }
     }
     #[must_use]
-    pub fn sr_0b0001(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
+    pub fn sr_0b0001(self) -> Sampling<(Usb, BosrClear, SrValid)> {
         unsafe { self.bits(0b0001) }
     }
     #[must_use]
-    pub fn sr_0b0010(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
+    pub fn sr_0b0010(self) -> Sampling<(Usb, BosrClear, SrValid)> {
         unsafe { self.bits(0b0010) }
     }
     #[must_use]
-    pub fn sr_0b0011(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
+    pub fn sr_0b0011(self) -> Sampling<(Usb, BosrClear, SrValid)> {
         unsafe { self.bits(0b0011) }
     }
     #[must_use]
-    pub fn sr_0b0110(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
+    pub fn sr_0b0110(self) -> Sampling<(Usb, BosrClear, SrValid)> {
         unsafe { self.bits(0b0110) }
     }
     #[must_use]
-    pub fn sr_0b0111(self) -> Sampling<(Usb, BosrIsClear, SrIsSet)> {
+    pub fn sr_0b0111(self) -> Sampling<(Usb, BosrClear, SrValid)> {
         unsafe { self.bits(0b0111) }
     }
 }
 
-impl<SR> Sr<(Usb, BosrIsSet, SR)> {
+impl<SR> Sr<(Usb, BosrSet, SR)> {
     #[must_use]
-    pub fn sr_0b1000(self) -> Sampling<(Usb, BosrIsSet, SrIsSet)> {
+    pub fn sr_0b1000(self) -> Sampling<(Usb, BosrSet, SrValid)> {
         unsafe { self.bits(0b1000) }
     }
     #[must_use]
-    pub fn sr_0b1001(self) -> Sampling<(Usb, BosrIsSet, SrIsSet)> {
+    pub fn sr_0b1001(self) -> Sampling<(Usb, BosrSet, SrValid)> {
         unsafe { self.bits(0b1001) }
     }
     #[must_use]
-    pub fn sr_0b1010(self) -> Sampling<(Usb, BosrIsSet, SrIsSet)> {
+    pub fn sr_0b1010(self) -> Sampling<(Usb, BosrSet, SrValid)> {
         unsafe { self.bits(0b1010) }
     }
     #[must_use]
-    pub fn sr_0b1011(self) -> Sampling<(Usb, BosrIsSet, SrIsSet)> {
+    pub fn sr_0b1011(self) -> Sampling<(Usb, BosrSet, SrValid)> {
         unsafe { self.bits(0b1011) }
     }
     #[must_use]
-    pub fn sr_0b1111(self) -> Sampling<(Usb, BosrIsSet, SrIsSet)> {
+    pub fn sr_0b1111(self) -> Sampling<(Usb, BosrSet, SrValid)> {
         unsafe { self.bits(0b1111) }
     }
 }

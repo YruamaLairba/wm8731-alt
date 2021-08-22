@@ -11,15 +11,25 @@ pub mod line_in;
 pub mod power_down;
 pub mod sampling;
 
+#[doc(inline)]
 pub use active_control::active_control;
+#[doc(inline)]
 pub use analogue_audio_path::analogue_audio_path;
+#[doc(inline)]
 pub use digital_audio_interface::digital_audio_interface;
+#[doc(inline)]
 pub use digital_audio_path::digital_audio_path;
+#[doc(inline)]
 pub use headphone_out::{left_headphone_out, right_headphone_out};
+#[doc(inline)]
 pub use line_in::{left_line_in, right_line_in};
+#[doc(inline)]
 pub use power_down::power_down;
+#[doc(inline)]
 pub use reset::reset;
+#[doc(inline)]
 pub use sampling::sampling;
+#[doc(inline)]
 pub use sampling::sampling_with_mclk;
 
 pub mod reset {
