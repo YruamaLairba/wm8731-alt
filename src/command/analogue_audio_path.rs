@@ -102,11 +102,11 @@ pub struct Dacsel {
 }
 
 impl Dacsel {
-    impl_bit!(AnalogueAudioPath, 2);
-    impl_set_bit!(AnalogueAudioPath, 2);
-    impl_clear_bit!(AnalogueAudioPath, 2);
-    impl_set_bit!(select, AnalogueAudioPath, 2);
-    impl_clear_bit!(deselect, AnalogueAudioPath, 2);
+    impl_bit!(AnalogueAudioPath, 4);
+    impl_set_bit!(AnalogueAudioPath, 4);
+    impl_clear_bit!(AnalogueAudioPath, 4);
+    impl_set_bit!(select, AnalogueAudioPath, 4);
+    impl_clear_bit!(deselect, AnalogueAudioPath, 4);
 
     #[must_use]
     pub fn variant(self, value: DacselV) -> AnalogueAudioPath {
