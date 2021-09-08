@@ -61,6 +61,7 @@
 //!  - available `sr` setting depends on `usb_normal` and `bosr` setting.
 //!
 //! ## Example of bad usage
+//! Following example show incorrect usage and should not compile.
 //! ```
 //! # #[cfg(any())] //avoid some compilation error when testing doc
 //! # {
