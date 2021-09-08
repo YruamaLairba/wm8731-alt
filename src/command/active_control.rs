@@ -25,9 +25,7 @@ pub fn active_control() -> ActiveControl {
 
 impl ActiveControl {
     fn new() -> Self {
-        Self {
-            data: 0b110 << 9 | 0b1001_1111,
-        }
+        Self { data: 0b1001 << 9 }
     }
     ///Activate digital audio interface
     #[must_use]
