@@ -2,7 +2,6 @@
 use core::marker::PhantomData;
 use embedded_hal::blocking::{i2c, spi};
 use embedded_hal::digital::v2::OutputPin;
-use embedded_hal::blocking::delay::DelayUs;
 
 use crate::Command;
 
